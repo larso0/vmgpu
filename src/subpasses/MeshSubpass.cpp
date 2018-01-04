@@ -2,6 +2,7 @@
 #include <bp/Util.h>
 
 using namespace bp;
+using namespace bpScene;
 using namespace glm;
 
 void MeshSubpass::setClipTransform(float x, float y, float w, float h)
@@ -47,14 +48,14 @@ void MeshSubpass::render(VkCommandBuffer cmdBuffer)
 
 void MeshSubpass::initShaders()
 {
-	auto vertexShaderCode = readBinaryFile("spv/basic.vert");
+	auto vertexShaderCode = readBinaryFile("spv/basic.vert.spv");
 	vertexShader.init(device, VK_SHADER_STAGE_VERTEX_BIT,
 			  static_cast<uint32_t>(vertexShaderCode.size()),
 			  reinterpret_cast<const uint32_t*>(vertexShaderCode.data()));
-	auto fragmentShaderCode = readBinaryFile("spv/basic.frag");
-	vertexShader.init(device, VK_SHADER_STAGE_FRAGMENT_BIT,
-			  static_cast<uint32_t>(fragmentShaderCode.size()),
-			  reinterpret_cast<const uint32_t*>(fragmentShaderCode.data()));
+	auto fragmentShaderCode = readBinaryFile("spv/basic.frag.spv");
+	fragmentShader.init(device, VK_SHADER_STAGE_FRAGMENT_BIT,
+			    static_cast<uint32_t>(fragmentShaderCode.size()),
+			    reinterpret_cast<const uint32_t*>(fragmentShaderCode.data()));
 }
 
 void MeshSubpass::initPipelineLayout()
@@ -67,6 +68,11 @@ void MeshSubpass::initPipeline()
 {
 	pipeline.addShaderStageInfo(vertexShader.getPipelineShaderStageInfo());
 	pipeline.addShaderStageInfo(fragmentShader.getPipelineShaderStageInfo());
+	pipeline.addVertexBindingDescription({0, Vertex::STRIDE, VK_VERTEX_INPUT_RATE_VERTEX});
+	pipeline.addVertexAttributeDescription({0, 0, VK_FORMAT_R32G32B32_SFLOAT,
+						Vertex::POSITION_OFFSET});
+	pipeline.addVertexAttributeDescription({1, 0, VK_FORMAT_R32G32B32_SFLOAT,
+						Vertex::NORMAL_OFFSET});
 	pipeline.init(device, renderPass, pipelineLayout);
 }
 

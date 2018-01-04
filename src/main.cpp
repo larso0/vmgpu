@@ -7,10 +7,13 @@
 #include <boost/program_options.hpp>
 #include <string>
 #include <iostream>
+#include <iomanip>
 #include <stdexcept>
 #include <cstring>
+#include "subpasses/MeshSubpass.h"
 
 using namespace bp;
+using namespace bpScene;
 using namespace std;
 namespace po = boost::program_options;
 
@@ -100,6 +103,25 @@ int main(int argc, char** argv)
 	Options options;
 	try { options = parseOptions(argc, argv); } catch (int e) { return e; }
 
+	if (options.mode != Mode::Single)
+	{
+		cerr << "Mode not implemented." << endl;
+		return 3;
+	}
+
+	Mesh mesh;
+	mesh.loadObj(options.objPath, FlagSet<Mesh::LoadFlags>()
+		<< Mesh::LoadFlags::POSITION
+		<< Mesh::LoadFlags::NORMAL);
+	Node sceneRoot, meshNode{&sceneRoot}, cameraNode{&sceneRoot};
+	Camera camera{&cameraNode};
+
+	float aspectRatio = static_cast<float>(options.width) / static_cast<float>(options.height);
+	camera.setPerspectiveProjection(glm::radians(60.f), aspectRatio, 0.01f, 1000.f);
+	cameraNode.translate(0.f, 0.f, 2.f);
+	sceneRoot.update();
+	camera.update();
+
 	bpView::init();
 
 #ifdef NDEBUG
@@ -142,6 +164,97 @@ int main(int argc, char** argv)
 	swapchain.setClearEnabled(true);
 	swapchain.setClearValue({0.2f, 0.2f, 0.2f, 1.f});
 	swapchain.init(&device, window, options.width, options.height, false);
+
+	//Single GPU rendering
+
+	DepthAttachment depthAttachment;
+	depthAttachment.setClearEnabled(true);
+	depthAttachment.setClearValue({1.f, 0.f});
+	depthAttachment.init(&device, options.width, options.height);
+
+	MeshSubpass subpass;
+	subpass.setScene(&mesh, 0, mesh.getElementCount(), &meshNode, &camera);
+	subpass.addColorAttachment(&swapchain);
+	subpass.setDepthAttachment(&depthAttachment);
+
+	RenderPass renderPass;
+	renderPass.addSubpassGraph(&subpass);
+	renderPass.setRenderArea({{}, {options.width, options.height}});
+	renderPass.init(options.width, options.height);
+
+	Queue& graphicsQueue = device.getGraphicsQueue();
+
+	VkCommandPool cmdPool;
+	VkCommandPoolCreateInfo poolInfo = {};
+	poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+	poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+	poolInfo.queueFamilyIndex = graphicsQueue.getQueueFamilyIndex();
+	VkResult result = vkCreateCommandPool(device, &poolInfo, nullptr, &cmdPool);
+	if (result != VK_SUCCESS)
+		throw runtime_error("Failed to create command pool.");
+
+	VkCommandBuffer cmdBuffer;
+	VkCommandBufferAllocateInfo cmdBufferInfo = {};
+	cmdBufferInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+	cmdBufferInfo.commandPool = cmdPool;
+	cmdBufferInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+	cmdBufferInfo.commandBufferCount = 1;
+	result = vkAllocateCommandBuffers(device, &cmdBufferInfo, &cmdBuffer);
+	if (result != VK_SUCCESS)
+		throw runtime_error("Failed to allocate command buffer.");
+
+	VkCommandBufferBeginInfo cmdBufferBeginInfo = {};
+	cmdBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+	cmdBufferBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+	VkSemaphore renderCompleteSem;
+	VkSemaphoreCreateInfo semInfo = {};
+	semInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+	result = vkCreateSemaphore(device, &semInfo, nullptr, &renderCompleteSem);
+	if (result != VK_SUCCESS)
+		throw runtime_error("Failed to create render complete semaphore.");
+
+	VkSemaphore presentSem = swapchain.getPresentSemaphore();
+	VkPipelineStageFlags waitStages = {VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT};
+	VkSubmitInfo submitInfo = {};
+	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &cmdBuffer;
+	submitInfo.signalSemaphoreCount = 1;
+	submitInfo.pSignalSemaphores = &renderCompleteSem;
+	submitInfo.waitSemaphoreCount = 1;
+	submitInfo.pWaitSemaphores = &presentSem;
+	submitInfo.pWaitDstStageMask = &waitStages;
+
+	double seconds = glfwGetTime();
+	double frametimeAccumulator = seconds;
+	unsigned frameCounter = 0;
+	while (!glfwWindowShouldClose(window.getHandle()))
+	{
+		vkBeginCommandBuffer(cmdBuffer, &cmdBufferBeginInfo);
+		renderPass.render(cmdBuffer);
+		vkEndCommandBuffer(cmdBuffer);
+		vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+		vkQueueWaitIdle(graphicsQueue);
+		swapchain.present(renderCompleteSem);
+
+		bpView::waitEvents();
+		window.handleEvents();
+
+		double time = glfwGetTime();
+		float delta = time - seconds;
+		seconds = time;
+		if (++frameCounter % 50 == 0)
+		{
+			double diff = time - frametimeAccumulator;
+			frametimeAccumulator = time;
+			double fps = 50.0 / diff;
+			cout << '\r' << setprecision(4) << fps << "FPS";
+		}
+	}
+
+	vkDestroySemaphore(device, renderCompleteSem, nullptr);
+	vkDestroyCommandPool(device, cmdPool, nullptr);
 
 	return 0;
 }
