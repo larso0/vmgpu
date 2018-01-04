@@ -20,6 +20,8 @@ file(GLOB_RECURSE SHADERS
 find_package(bp REQUIRED)
 find_package(bpScene REQUIRED)
 find_package(bpView REQUIRED)
+find_package(Boost REQUIRED
+	     COMPONENTS "program_options")
 
 if (NOT BP_FOUND)
 	message(SEND_ERROR "bp not found")
@@ -30,16 +32,21 @@ endif()
 if (NOT BP_VIEW_FOUND)
 	message(SEND_ERROR "bpView not found")
 endif()
+if (NOT Boost_FOUND)
+	message(SEND_ERROR "Required Boost libraries not found.")
+endif()
 
 include_directories(${BP_INCLUDE_DIRS}
 		    ${BP_SCENE_INCLUDE_DIRS}
-		    ${BP_VIEW_INCLUDE_DIRS})
+		    ${BP_VIEW_INCLUDE_DIRS}
+		    ${Boost_INCLUDE_DIRS})
 
 add_executable(vmgpu ${SRC})
 target_link_libraries(vmgpu
 		      ${BP_LIBRARIES}
 		      ${BP_SCENE_LIBRARIES}
-		      ${BP_VIEW_LIBRARIES})
+		      ${BP_VIEW_LIBRARIES}
+		      ${Boost_LIBRARIES})
 
 set(GLSLANG_VALIDATOR glslangValidator)
 foreach(SHADER ${SHADERS})
