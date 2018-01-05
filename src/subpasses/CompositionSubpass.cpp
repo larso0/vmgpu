@@ -5,6 +5,11 @@
 using namespace bp;
 using namespace std;
 
+CompositionSubpass::~CompositionSubpass()
+{
+	if (sampler != VK_NULL_HANDLE) vkDestroySampler(*device, sampler, nullptr);
+}
+
 void CompositionSubpass::init(NotNull<RenderPass> renderPass)
 {
 	CompositionSubpass::renderPass = renderPass;

@@ -20,6 +20,7 @@ public:
 		depthTestEnabled{false},
 		sampler{VK_NULL_HANDLE},
 		textureCount{0} {}
+	~CompositionSubpass();
 
 	void setDepthTestEnabled(bool enabled) { depthTestEnabled = enabled; }
 	void init(bp::NotNull<bp::RenderPass> renderPass) override;
