@@ -1,11 +1,6 @@
 #include <bpView/bpView.h>
 #include <bpView/Window.h>
 #include <bp/Instance.h>
-#include <bp/Device.h>
-#include <bp/Swapchain.h>
-#include <bp/RenderPass.h>
-#include <bp/CommandPool.h>
-#include <bp/Semaphore.h>
 #include <boost/program_options.hpp>
 #include <string>
 #include <iostream>
@@ -110,14 +105,6 @@ int main(int argc, char** argv)
 	mesh.loadObj(options.objPath, FlagSet<Mesh::LoadFlags>()
 		<< Mesh::LoadFlags::POSITION
 		<< Mesh::LoadFlags::NORMAL);
-	Node sceneRoot, meshNode{&sceneRoot}, cameraNode{&sceneRoot};
-	Camera camera{&cameraNode};
-
-	float aspectRatio = static_cast<float>(options.width) / static_cast<float>(options.height);
-	camera.setPerspectiveProjection(glm::radians(60.f), aspectRatio, 0.01f, 1000.f);
-	cameraNode.translate(0.f, 0.f, 2.f);
-	sceneRoot.update();
-	camera.update();
 
 	bpView::init();
 
@@ -153,15 +140,15 @@ int main(int argc, char** argv)
 		return 3;
 	}
 
-	renderer->init(&instance, options.width, options.height, &mesh, &meshNode, &camera);
+	renderer->init(&instance, options.width, options.height, &mesh);
 
 	double seconds = glfwGetTime();
 	double frametimeAccumulator = seconds;
 	unsigned frameCounter = 0;
 	while (!renderer->shouldClose())
 	{
+		bpView::pollEvents();
 		renderer->render();
-		bpView::waitEvents();
 
 		double time = glfwGetTime();
 		float delta = static_cast<float>(time - seconds);

@@ -11,8 +11,7 @@ class Renderer
 public:
 	virtual ~Renderer() = default;
 	virtual void init(bp::NotNull<bp::Instance> instance, uint32_t width, uint32_t height,
-			  bp::NotNull<bpScene::Mesh> mesh, bp::NotNull<bpScene::Node> meshNode,
-			  bp::NotNull<bpScene::Camera> camera) = 0;
+			  bp::NotNull<bpScene::Mesh> mesh) = 0;
 	virtual void render() = 0;
 	virtual bool shouldClose() = 0;
 };

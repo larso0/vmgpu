@@ -17,13 +17,13 @@ public:
 	SingleRenderer() :
 		instance{nullptr},
 		mesh{nullptr},
-		meshNode{nullptr},
-		camera{nullptr},
+		meshNode{&sceneRoot},
+		cameraNode{&sceneRoot},
+		camera{&cameraNode},
 		cmdBuffer{VK_NULL_HANDLE} {}
 
 	void init(bp::NotNull<bp::Instance> instance, uint32_t width, uint32_t height,
-		  bp::NotNull<bpScene::Mesh> mesh, bp::NotNull<bpScene::Node> meshNode,
-		  bp::NotNull<bpScene::Camera> camera) override;
+		  bp::NotNull<bpScene::Mesh> mesh) override;
 	void render() override;
 
 	bool shouldClose() override;
@@ -31,8 +31,8 @@ public:
 private:
 	bp::Instance* instance;
 	bpScene::Mesh* mesh;
-	bpScene::Node* meshNode;
-	bpScene::Camera* camera;
+	bpScene::Node sceneRoot, meshNode, cameraNode;
+	bpScene::Camera camera;
 
 	bp::Window window;
 	bp::Device device;

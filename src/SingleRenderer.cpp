@@ -4,14 +4,20 @@ using namespace bp;
 using namespace bpScene;
 
 void SingleRenderer::init(NotNull<Instance> instance, uint32_t width, uint32_t height,
-			  NotNull<Mesh> mesh, NotNull<Node> meshNode, NotNull<Camera> camera)
+			  NotNull<Mesh> mesh)
 {
 	SingleRenderer::instance = instance;
 	SingleRenderer::mesh = mesh;
-	SingleRenderer::meshNode = meshNode;
-	SingleRenderer::camera = camera;
+
+	float aspectRatio = static_cast<float>(width) / static_cast<float>(height);
+	camera.setPerspectiveProjection(glm::radians(60.f), aspectRatio, 0.01f, 1000.f);
+	cameraNode.translate(0.f, 0.f, 2.f);
+	sceneRoot.update();
+	camera.update();
 
 	window.init(*instance, width, height, "vmgpu");
+	width = window.getWidth();
+	height = window.getHeight();
 
 	DeviceRequirements requirements;
 	requirements.queues = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_TRANSFER_BIT;
@@ -29,13 +35,22 @@ void SingleRenderer::init(NotNull<Instance> instance, uint32_t width, uint32_t h
 	depthAttachment.setClearValue({1.f, 0.f});
 	depthAttachment.init(&device, width, height);
 
-	meshSubpass.setScene(mesh, 0, mesh->getElementCount(), meshNode, camera);
+	meshSubpass.setScene(mesh, 0, mesh->getElementCount(), &meshNode, &camera);
 	meshSubpass.addColorAttachment(&swapchain);
 	meshSubpass.setDepthAttachment(&depthAttachment);
 
 	renderPass.addSubpassGraph(&meshSubpass);
 	renderPass.setRenderArea({{}, {width, height}});
 	renderPass.init(width, height);
+
+	connect(window.resizeEvent, [this](uint32_t w, uint32_t h){
+		swapchain.resize(w, h);
+		depthAttachment.resize(w, h);
+		renderPass.resize(w, h);
+		renderPass.setRenderArea({{}, {w, h}});
+		float aspectRatio = static_cast<float>(w) / static_cast<float>(h);
+		camera.setPerspectiveProjection(glm::radians(60.f), aspectRatio, 0.01f, 1000.f);
+	});
 
 	cmdPool.init(device.getGraphicsQueue());
 	renderCompleteSem.init(device);
