@@ -12,7 +12,8 @@
 #include <iomanip>
 #include <stdexcept>
 #include <cstring>
-#include "subpasses/MeshSubpass.h"
+#include "Renderer.h"
+#include "SingleRenderer.h"
 
 using namespace bp;
 using namespace bpScene;
@@ -105,12 +106,6 @@ int main(int argc, char** argv)
 	Options options;
 	try { options = parseOptions(argc, argv); } catch (int e) { return e; }
 
-	if (options.mode != Mode::Single)
-	{
-		cerr << "Mode not implemented." << endl;
-		return 3;
-	}
-
 	Mesh mesh;
 	mesh.loadObj(options.objPath, FlagSet<Mesh::LoadFlags>()
 		<< Mesh::LoadFlags::POSITION
@@ -146,69 +141,27 @@ int main(int argc, char** argv)
 	connect(instance.errorEvent, printErr);
 	connect(bpView::errorEvent, instance.errorEvent);
 
-	static const char* SWAPCHAIN_EXTENSION = "VK_KHR_swapchain";
+	Renderer* renderer = nullptr;
 
-	Window window{instance, options.width, options.height, "vmgpu", nullptr,
-		      FlagSet<Window::Flags>() << Window::Flags::VISIBLE
-					       << Window::Flags::DECORATED
-					       << Window::Flags::AUTO_ICONIFY};
+	switch (options.mode)
+	{
+	case Mode::Single:
+		renderer = new SingleRenderer();
+		break;
+	default:
+		cerr << "Mode not implemented." << endl;
+		return 3;
+	}
 
-	DeviceRequirements requirements;
-	requirements.queues = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_TRANSFER_BIT;
-	requirements.features.samplerAnisotropy = VK_TRUE;
-	requirements.features.geometryShader = VK_TRUE;
-	requirements.surface = window.getSurface();
-	requirements.extensions.push_back(SWAPCHAIN_EXTENSION);
-
-	Device device{instance, requirements};
-
-	Swapchain swapchain;
-	swapchain.setClearEnabled(true);
-	swapchain.setClearValue({0.2f, 0.2f, 0.2f, 1.f});
-	swapchain.init(&device, window, options.width, options.height, false);
-
-	//Single GPU rendering
-
-	DepthAttachment depthAttachment;
-	depthAttachment.setClearEnabled(true);
-	depthAttachment.setClearValue({1.f, 0.f});
-	depthAttachment.init(&device, options.width, options.height);
-
-	MeshSubpass subpass;
-	subpass.setScene(&mesh, 0, mesh.getElementCount(), &meshNode, &camera);
-	subpass.addColorAttachment(&swapchain);
-	subpass.setDepthAttachment(&depthAttachment);
-
-	RenderPass renderPass;
-	renderPass.addSubpassGraph(&subpass);
-	renderPass.setRenderArea({{}, {options.width, options.height}});
-	renderPass.init(options.width, options.height);
-
-	Queue* graphicsQueue = device.getGraphicsQueue();
-	CommandPool cmdPool{graphicsQueue};
-	Semaphore renderCompleteSem{device};
-
-	VkCommandBuffer cmdBuffer = cmdPool.allocateCommandBuffer();
-
-	VkCommandBufferBeginInfo cmdBufferBeginInfo = {};
-	cmdBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-	cmdBufferBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+	renderer->init(&instance, options.width, options.height, &mesh, &meshNode, &camera);
 
 	double seconds = glfwGetTime();
 	double frametimeAccumulator = seconds;
 	unsigned frameCounter = 0;
-	while (!glfwWindowShouldClose(window.getHandle()))
+	while (!renderer->shouldClose())
 	{
-		vkBeginCommandBuffer(cmdBuffer, &cmdBufferBeginInfo);
-		renderPass.render(cmdBuffer);
-		vkEndCommandBuffer(cmdBuffer);
-		cmdPool.execute(
-			{{swapchain.getPresentSemaphore(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT}},
-			{cmdBuffer}, {renderCompleteSem});
-		swapchain.present(renderCompleteSem);
-
+		renderer->render();
 		bpView::waitEvents();
-		window.handleEvents();
 
 		double time = glfwGetTime();
 		float delta = static_cast<float>(time - seconds);
@@ -221,6 +174,8 @@ int main(int argc, char** argv)
 			cout << '\r' << setprecision(4) << fps << "FPS";
 		}
 	}
+
+	delete renderer;
 
 	return 0;
 }
