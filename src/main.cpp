@@ -4,6 +4,8 @@
 #include <bp/Device.h>
 #include <bp/Swapchain.h>
 #include <bp/RenderPass.h>
+#include <bp/CommandPool.h>
+#include <bp/Semaphore.h>
 #include <boost/program_options.hpp>
 #include <string>
 #include <iostream>
@@ -182,49 +184,15 @@ int main(int argc, char** argv)
 	renderPass.setRenderArea({{}, {options.width, options.height}});
 	renderPass.init(options.width, options.height);
 
-	Queue& graphicsQueue = device.getGraphicsQueue();
+	Queue* graphicsQueue = device.getGraphicsQueue();
+	CommandPool cmdPool{graphicsQueue};
+	Semaphore renderCompleteSem{device};
 
-	VkCommandPool cmdPool;
-	VkCommandPoolCreateInfo poolInfo = {};
-	poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-	poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-	poolInfo.queueFamilyIndex = graphicsQueue.getQueueFamilyIndex();
-	VkResult result = vkCreateCommandPool(device, &poolInfo, nullptr, &cmdPool);
-	if (result != VK_SUCCESS)
-		throw runtime_error("Failed to create command pool.");
-
-	VkCommandBuffer cmdBuffer;
-	VkCommandBufferAllocateInfo cmdBufferInfo = {};
-	cmdBufferInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-	cmdBufferInfo.commandPool = cmdPool;
-	cmdBufferInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-	cmdBufferInfo.commandBufferCount = 1;
-	result = vkAllocateCommandBuffers(device, &cmdBufferInfo, &cmdBuffer);
-	if (result != VK_SUCCESS)
-		throw runtime_error("Failed to allocate command buffer.");
+	VkCommandBuffer cmdBuffer = cmdPool.allocateCommandBuffer();
 
 	VkCommandBufferBeginInfo cmdBufferBeginInfo = {};
 	cmdBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 	cmdBufferBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-	VkSemaphore renderCompleteSem;
-	VkSemaphoreCreateInfo semInfo = {};
-	semInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-	result = vkCreateSemaphore(device, &semInfo, nullptr, &renderCompleteSem);
-	if (result != VK_SUCCESS)
-		throw runtime_error("Failed to create render complete semaphore.");
-
-	VkSemaphore presentSem = swapchain.getPresentSemaphore();
-	VkPipelineStageFlags waitStages = {VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT};
-	VkSubmitInfo submitInfo = {};
-	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &cmdBuffer;
-	submitInfo.signalSemaphoreCount = 1;
-	submitInfo.pSignalSemaphores = &renderCompleteSem;
-	submitInfo.waitSemaphoreCount = 1;
-	submitInfo.pWaitSemaphores = &presentSem;
-	submitInfo.pWaitDstStageMask = &waitStages;
 
 	double seconds = glfwGetTime();
 	double frametimeAccumulator = seconds;
@@ -234,15 +202,16 @@ int main(int argc, char** argv)
 		vkBeginCommandBuffer(cmdBuffer, &cmdBufferBeginInfo);
 		renderPass.render(cmdBuffer);
 		vkEndCommandBuffer(cmdBuffer);
-		vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
-		vkQueueWaitIdle(graphicsQueue);
+		cmdPool.execute(
+			{{swapchain.getPresentSemaphore(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT}},
+			{cmdBuffer}, {renderCompleteSem});
 		swapchain.present(renderCompleteSem);
 
 		bpView::waitEvents();
 		window.handleEvents();
 
 		double time = glfwGetTime();
-		float delta = time - seconds;
+		float delta = static_cast<float>(time - seconds);
 		seconds = time;
 		if (++frameCounter % 50 == 0)
 		{
@@ -252,9 +221,6 @@ int main(int argc, char** argv)
 			cout << '\r' << setprecision(4) << fps << "FPS";
 		}
 	}
-
-	vkDestroySemaphore(device, renderCompleteSem, nullptr);
-	vkDestroyCommandPool(device, cmdPool, nullptr);
 
 	return 0;
 }
