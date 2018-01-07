@@ -29,7 +29,7 @@ void SingleRenderer::init(NotNull<Instance> instance, uint32_t width, uint32_t h
 
 	swapchain.setClearEnabled(true);
 	swapchain.setClearValue({0.2f, 0.2f, 0.2f, 1.0});
-	swapchain.init(&device, window, width, height, false);
+	swapchain.init(&device, window, width, height, true);
 
 	depthAttachment.setClearEnabled(true);
 	depthAttachment.setClearValue({1.f, 0.f});
@@ -70,8 +70,10 @@ void SingleRenderer::render()
 	renderPass.render(cmdBuffer);
 	vkEndCommandBuffer(cmdBuffer);
 
-	cmdPool.execute({{swapchain.getPresentSemaphore(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT}},
+	cmdPool.submit({{swapchain.getPresentSemaphore(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT}},
 			{cmdBuffer}, {renderCompleteSem});
+	cmdPool.waitQueueIdle();
+
 	swapchain.present(renderCompleteSem);
 }
 

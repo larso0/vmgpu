@@ -42,8 +42,8 @@ private:
 	bp::RenderPass renderPass;
 	bp::CommandPool cmdPool;
 	bp::Semaphore renderCompleteSem;
-	VkCommandBuffer cmdBuffer;
 
+	VkCommandBuffer cmdBuffer;
 };
 
 
