@@ -9,6 +9,7 @@
 #include <cstring>
 #include "Renderer.h"
 #include "SingleRenderer.h"
+#include "SortLastRenderer.h"
 
 using namespace bp;
 using namespace bpScene;
@@ -134,6 +135,9 @@ int main(int argc, char** argv)
 	{
 	case Mode::Single:
 		renderer = new SingleRenderer();
+		break;
+	case Mode::SortLast:
+		renderer = new SortLastRenderer();
 		break;
 	default:
 		cerr << "Mode not implemented." << endl;

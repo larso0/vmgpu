@@ -26,12 +26,11 @@ public:
 	void init(bp::NotNull<bp::RenderPass> renderPass) override;
 	void render(VkCommandBuffer cmdBuffer) override;
 
-	unsigned addTexture(const VkRect2D& area);
-	void resizeTexture(unsigned index, const VkRect2D& newArea);
+	unsigned addTexture(const VkRect2D& area, bp::NotNull<bp::Texture> texture,
+			    bp::Texture* depthTexture = nullptr);
+	void resizeTextureResources(unsigned index, const VkRect2D& newArea);
 
 	unsigned getTextureCount() const { return textureCount; }
-	bp::Image* getTextureImage(unsigned index) { return textures[index].getImage(); }
-	bp::Image* getDepthImage(unsigned index) { return depthTextures[index].getImage(); }
 
 private:
 	struct PushConstant
@@ -50,8 +49,8 @@ private:
 	VkSampler sampler;
 
 	unsigned textureCount;
-	std::vector<bp::Texture> textures;
-	std::vector<bp::Texture> depthTextures;
+	std::vector<bp::Texture*> textures;
+	std::vector<bp::Texture*> depthTextures;
 	std::vector<VkRect2D> areas;
 
 	bp::DescriptorPool descriptorPool;
