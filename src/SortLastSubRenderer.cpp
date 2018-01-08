@@ -22,7 +22,11 @@ void SortLastSubRenderer::init(NotNull<Device> renderDevice, NotNull<Device> tar
 		colorUserFlags << Texture::UsageFlags::SHADER_READABLE;
 
 	colorAttachment.setUsageFlags(colorUserFlags);
+	colorAttachment.setClearEnabled(true);
+	colorAttachment.setClearValue({0.2f, 0.2f, 0.2f, 1.f});
 	colorAttachment.init(renderDevice, VK_FORMAT_R8G8B8A8_UNORM, width, height);
+	depthAttachment.setClearEnabled(true);
+	depthAttachment.setClearValue({1.f, 0.f});
 	depthAttachment.init(renderDevice, width, height);
 	targetDepthTexture.setUsageFlags(FlagSet<Texture::UsageFlags>()
 						 << Texture::UsageFlags::SHADER_READABLE);
@@ -46,7 +50,7 @@ void SortLastSubRenderer::init(NotNull<Device> renderDevice, NotNull<Device> tar
 	renderPass.setRenderArea({{}, {width, height}});
 
 	cmdPool.init(renderDevice->getGraphicsQueue());
-	renderCommandBuffer = cmdPool.allocateCommandBuffer();
+	renderCmdBuffer = cmdPool.allocateCommandBuffer();
 }
 
 void SortLastSubRenderer::resize(uint32_t width, uint32_t height)
@@ -66,24 +70,24 @@ void SortLastSubRenderer::render()
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
-	vkBeginCommandBuffer(renderCommandBuffer, &beginInfo);
-	renderPass.render(renderCommandBuffer);
+	vkBeginCommandBuffer(renderCmdBuffer, &beginInfo);
+	renderPass.render(renderCmdBuffer);
 
-	depthAttachment.getImage()->updateStagingBuffer(renderCommandBuffer);
+	depthAttachment.getImage()->updateStagingBuffer(renderCmdBuffer);
 	if (targetDevice == renderDevice)
 	{
 		targetDepthTexture.getImage()->transfer(*depthAttachment.getImage(),
-							renderCommandBuffer);
-		targetColorTexture->transitionShaderReadable(renderCommandBuffer);
-		targetDepthTexture.transitionShaderReadable(renderCommandBuffer);
+							renderCmdBuffer);
+		targetColorTexture->transitionShaderReadable(renderCmdBuffer);
+		targetDepthTexture.transitionShaderReadable(renderCmdBuffer);
 	} else
 	{
-		colorAttachment.getImage()->updateStagingBuffer(renderCommandBuffer);
+		colorAttachment.getImage()->updateStagingBuffer(renderCmdBuffer);
 	}
 
-	vkEndCommandBuffer(renderCommandBuffer);
+	vkEndCommandBuffer(renderCmdBuffer);
 
-	cmdPool.submit({}, {renderCommandBuffer}, {});
+	cmdPool.submit({}, {renderCmdBuffer}, {});
 	cmdPool.waitQueueIdle();
 }
 

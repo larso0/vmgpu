@@ -16,7 +16,7 @@ public:
 		targetDevice{nullptr},
 		targetColorTexture{nullptr},
 		subpass{nullptr},
-		renderCommandBuffer{VK_NULL_HANDLE} {}
+		renderCmdBuffer{VK_NULL_HANDLE} {}
 	~SortLastSubRenderer();
 
 	void init(bp::NotNull<bp::Device> renderDevice, bp::NotNull<bp::Device> targetDevice,
@@ -38,7 +38,7 @@ private:
 	bp::RenderPass renderPass;
 	bp::Subpass* subpass;
 	bp::CommandPool cmdPool;
-	VkCommandBuffer renderCommandBuffer;
+	VkCommandBuffer renderCmdBuffer;
 };
 
 

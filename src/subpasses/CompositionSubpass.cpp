@@ -77,7 +77,6 @@ void CompositionSubpass::resizeTextureResources(unsigned index, const VkRect2D& 
 		descriptorSets[index].bind(&descriptors[index]);
 		if (depthTestEnabled)
 		{
-			depthTextures[index]->resize(newArea.extent.width, newArea.extent.height);
 			depthDescriptors[index].resetDescriptorInfos();
 			depthDescriptors[index].addDescriptorInfo(
 				{sampler, depthTextures[index]->getImageView(),
