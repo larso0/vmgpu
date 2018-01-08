@@ -125,6 +125,7 @@ void SortLastRenderer::render()
 	for (auto& f : futures) f.wait();
 
 	//Copy to GPU responsible for compositing
+	futures.clear();
 	for (auto& r : subRenderers)
 		futures.push_back(async(launch::async, [&r]{ r.copyToTarget(); }));
 	for (auto& f : futures) f.wait();

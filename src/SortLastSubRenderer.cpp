@@ -69,6 +69,7 @@ void SortLastSubRenderer::render()
 	vkBeginCommandBuffer(renderCommandBuffer, &beginInfo);
 	renderPass.render(renderCommandBuffer);
 
+	depthAttachment.getImage()->updateStagingBuffer(renderCommandBuffer);
 	if (targetDevice == renderDevice)
 	{
 		targetDepthTexture.getImage()->transfer(*depthAttachment.getImage(),
@@ -78,15 +79,6 @@ void SortLastSubRenderer::render()
 	} else
 	{
 		colorAttachment.getImage()->updateStagingBuffer(renderCommandBuffer);
-		depthAttachment.getImage()->updateStagingBuffer(renderCommandBuffer);
-		colorAttachment.getImage()->transition(VK_IMAGE_LAYOUT_GENERAL,
-						       VK_ACCESS_HOST_READ_BIT,
-						       VK_PIPELINE_STAGE_HOST_BIT,
-						       renderCommandBuffer);
-		depthAttachment.getImage()->transition(VK_IMAGE_LAYOUT_GENERAL,
-						       VK_ACCESS_HOST_READ_BIT,
-						       VK_PIPELINE_STAGE_HOST_BIT,
-						       renderCommandBuffer);
 	}
 
 	vkEndCommandBuffer(renderCommandBuffer);

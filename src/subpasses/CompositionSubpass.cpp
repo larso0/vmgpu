@@ -173,6 +173,7 @@ void CompositionSubpass::initTextureResources(const VkRect2D& area)
 	if (depthTestEnabled)
 	{
 		depthDescriptors[index].setType(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+		depthDescriptors[index].setBinding(1);
 		depthDescriptors[index].addDescriptorInfo(
 			{sampler, depthTextures[index]->getImageView(),
 			 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL});
