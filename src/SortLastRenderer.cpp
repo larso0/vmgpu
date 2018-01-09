@@ -134,6 +134,7 @@ void SortLastRenderer::render()
 	for (auto& r : subRenderers)
 		futures.push_back(async(launch::async, [&r]{ r.copyToTarget(); }));
 	for (auto& f : futures) f.wait();
+	for (auto& r : subRenderers) r.targetUnmap();
 
 	//Compositing
 	VkCommandBufferBeginInfo beginInfo = {};

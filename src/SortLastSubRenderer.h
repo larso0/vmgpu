@@ -24,6 +24,7 @@ public:
 	void resize(uint32_t width, uint32_t height);
 	void render();
 	void copyToTarget();
+	void targetUnmap();
 
 	bp::Texture* getTargetDepthTexture() { return &targetDepthTexture; }
 	bp::Texture* getTargetColorTexture() { return targetColorTexture; }

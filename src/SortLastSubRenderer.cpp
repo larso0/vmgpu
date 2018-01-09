@@ -107,6 +107,13 @@ void SortLastSubRenderer::copyToTarget()
 
 		colorAttachment.getImage()->unmap(false);
 		depthAttachment.getImage()->unmap(false);
+	}
+}
+
+void SortLastSubRenderer::targetUnmap()
+{
+	if (targetDevice != renderDevice)
+	{
 		targetColorTexture->getImage()->unmap();
 		targetDepthTexture.getImage()->unmap();
 	}
