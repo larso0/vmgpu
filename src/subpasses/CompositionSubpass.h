@@ -63,8 +63,7 @@ private:
 	void initPipelineLayout();
 	void initPipeline();
 	void initSampler();
-	void initTextureResources(const VkRect2D& area);
-	void initTextures();
+	void initDescriptors();
 };
 
 

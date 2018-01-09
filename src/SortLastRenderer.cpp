@@ -31,7 +31,6 @@ void SortLastRenderer::init(bp::NotNull<bp::Instance> instance, uint32_t width, 
 	DeviceRequirements requirements;
 	requirements.queues = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_TRANSFER_BIT;
 	requirements.features.samplerAnisotropy = VK_TRUE;
-	requirements.features.geometryShader = VK_TRUE;
 	requirements.surface = window;
 	requirements.extensions.push_back("VK_KHR_swapchain");
 	devices.emplace_back(*instance, requirements);
@@ -45,6 +44,7 @@ void SortLastRenderer::init(bp::NotNull<bp::Instance> instance, uint32_t width, 
 	depthAttachment.setClearValue({1.f, 0.f});
 	depthAttachment.init(&devices[0], width, height);
 
+	compositionSubpass.setDepthTestEnabled(true);
 	compositionSubpass.addColorAttachment(&swapchain);
 	compositionSubpass.setDepthAttachment(&depthAttachment);
 	compositionRenderPass.addSubpassGraph(&compositionSubpass);
@@ -113,6 +113,11 @@ void SortLastRenderer::init(bp::NotNull<bp::Instance> instance, uint32_t width, 
 	});
 }
 
+void SortLastRenderer::setColor(uint32_t deviceIndex, const glm::vec3& color)
+{
+	subpasses[deviceIndex].setColor(color);
+}
+
 void SortLastRenderer::render()
 {
 	window.handleEvents();
@@ -144,6 +149,12 @@ void SortLastRenderer::render()
 	cmdPool.waitQueueIdle();
 
 	swapchain.present(compositionPassCompleteSem);
+}
+
+void SortLastRenderer::update(float delta)
+{
+	meshNode.rotate(delta, {0.f, 1.f, 0.f});
+	meshNode.update();
 }
 
 bool SortLastRenderer::shouldClose()

@@ -77,6 +77,12 @@ void SingleRenderer::render()
 	swapchain.present(renderCompleteSem);
 }
 
+void SingleRenderer::update(float delta)
+{
+	meshNode.rotate(delta, {0.f, 1.f, 0.f});
+	meshNode.update();
+}
+
 bool SingleRenderer::shouldClose()
 {
 	return static_cast<bool>(glfwWindowShouldClose(window.getHandle()));

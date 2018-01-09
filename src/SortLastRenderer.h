@@ -30,7 +30,9 @@ public:
 	void setDeviceCount(uint32_t count) { deviceCount = count; }
 	void init(bp::NotNull<bp::Instance> instance, uint32_t width, uint32_t height,
 		  bp::NotNull<bpScene::Mesh> mesh) override;
+	void setColor(uint32_t deviceIndex, const glm::vec3& color);
 	void render() override;
+	void update(float delta) override;
 
 	bool shouldClose() override;
 

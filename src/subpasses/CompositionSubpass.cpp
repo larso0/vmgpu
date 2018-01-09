@@ -19,7 +19,7 @@ void CompositionSubpass::init(NotNull<RenderPass> renderPass)
 	initPipelineLayout();
 	initPipeline();
 	initSampler();
-	initTextures();
+	initDescriptors();
 	initialized = true;
 }
 
@@ -157,31 +157,7 @@ void CompositionSubpass::initSampler()
 		throw runtime_error("Failed to create sampler.");
 }
 
-void CompositionSubpass::initTextureResources(const VkRect2D& area)
-{
-	auto index = descriptors.size();
-	descriptors.emplace_back();
-	if (depthTestEnabled) depthDescriptors.emplace_back();
-	descriptorSets.emplace_back();
-	descriptorSets[index].init(device, &descriptorPool, &descriptorSetLayout);
-
-	descriptors[index].setType(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
-	descriptors[index].addDescriptorInfo({sampler, textures[index]->getImageView(),
-					      VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL});
-	descriptorSets[index].bind(&descriptors[index]);
-	if (depthTestEnabled)
-	{
-		depthDescriptors[index].setType(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
-		depthDescriptors[index].setBinding(1);
-		depthDescriptors[index].addDescriptorInfo(
-			{sampler, depthTextures[index]->getImageView(),
-			 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL});
-		descriptorSets[index].bind(&depthDescriptors[index]);
-	}
-	descriptorSets[index].update();
-}
-
-void CompositionSubpass::initTextures()
+void CompositionSubpass::initDescriptors()
 {
 	descriptorPool.init(device,
 			    {{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, textureCount * 2}},
@@ -189,5 +165,27 @@ void CompositionSubpass::initTextures()
 	descriptorSets.reserve(textureCount);
 	descriptors.reserve(textureCount);
 	depthDescriptors.reserve(textureCount);
-	for (const VkRect2D& area : areas) initTextureResources(area);
+
+	for (auto i = 0; i < textureCount; i++)
+	{
+		descriptors.emplace_back();
+		if (depthTestEnabled) depthDescriptors.emplace_back();
+		descriptorSets.emplace_back();
+		descriptorSets[i].init(device, &descriptorPool, &descriptorSetLayout);
+
+		descriptors[i].setType(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+		descriptors[i].addDescriptorInfo({sampler, textures[i]->getImageView(),
+						      VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL});
+		descriptorSets[i].bind(&descriptors[i]);
+		if (depthTestEnabled)
+		{
+			depthDescriptors[i].setType(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+			depthDescriptors[i].setBinding(1);
+			depthDescriptors[i].addDescriptorInfo(
+				{sampler, depthTextures[i]->getImageView(),
+				 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL});
+			descriptorSets[i].bind(&depthDescriptors[i]);
+		}
+		descriptorSets[i].update();
+	}
 }

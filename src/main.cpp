@@ -146,6 +146,11 @@ int main(int argc, char** argv)
 
 	renderer->init(&instance, options.width, options.height, &mesh);
 
+	if (options.mode == Mode::SortLast)
+	{
+		static_cast<SortLastRenderer*>(renderer)->setColor(1, {0.f, 1.f, 0.f});
+	}
+
 	double seconds = glfwGetTime();
 	double frametimeAccumulator = seconds;
 	unsigned frameCounter = 0;
@@ -164,6 +169,8 @@ int main(int argc, char** argv)
 			double fps = 50.0 / diff;
 			cout << '\r' << setprecision(4) << fps << "FPS";
 		}
+
+		renderer->update(delta);
 	}
 
 	delete renderer;

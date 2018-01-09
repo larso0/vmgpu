@@ -25,6 +25,7 @@ public:
 	void init(bp::NotNull<bp::Instance> instance, uint32_t width, uint32_t height,
 		  bp::NotNull<bpScene::Mesh> mesh) override;
 	void render() override;
+	void update(float delta) override;
 
 	bool shouldClose() override;
 

@@ -11,13 +11,22 @@ void MeshSubpass::setClipTransform(float x, float y, float w, float h)
 				  {((0.5f + x) / w) - 0.5f, ((0.5f + y) / h) - 0.5f, 0.f});
 }
 
+void MeshSubpass::setColor(const glm::vec3& color)
+{
+	MeshSubpass::color = color;
+	if (initialized) uniformBuffer.transfer(0, sizeof(glm::vec3), &color);
+}
+
 void MeshSubpass::init(bp::NotNull<bp::RenderPass> renderPass)
 {
 	MeshSubpass::renderPass = renderPass;
 	initShaders();
+	initDescriptorSetLayout();
 	initPipelineLayout();
 	initPipeline();
 	initBuffers();
+	initDescriptors();
+	initialized = true;
 }
 
 void MeshSubpass::render(VkCommandBuffer cmdBuffer)
@@ -37,6 +46,10 @@ void MeshSubpass::render(VkCommandBuffer cmdBuffer)
 	};
 	vkCmdPushConstants(cmdBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0,
 			   sizeof(PushConstant), &pushConstant);
+
+	VkDescriptorSet set = descriptorSet;
+	vkCmdBindDescriptorSets(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1,
+				&set, 0, nullptr);
 
 	VkDeviceSize vertexBufferOffset = 0;
 	VkDeviceSize indexBufferOffset = offset * sizeof(uint32_t);
@@ -58,8 +71,16 @@ void MeshSubpass::initShaders()
 			    reinterpret_cast<const uint32_t*>(fragmentShaderCode.data()));
 }
 
+void MeshSubpass::initDescriptorSetLayout()
+{
+	descriptorSetLayout.addLayoutBinding({0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1,
+					      VK_SHADER_STAGE_FRAGMENT_BIT, nullptr});
+	descriptorSetLayout.init(device);
+}
+
 void MeshSubpass::initPipelineLayout()
 {
+	pipelineLayout.addDescriptorSetLayout(descriptorSetLayout);
 	pipelineLayout.addPushConstantRange({VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PushConstant)});
 	pipelineLayout.init(device);
 }
@@ -87,4 +108,17 @@ void MeshSubpass::initBuffers()
 			 VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
 			 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 	indexBuffer.transfer(0, VK_WHOLE_SIZE, mesh->getIndexDataPtr());
+	uniformBuffer.init(device, sizeof(glm::vec3), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+			   VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+	uniformBuffer.transfer(0, sizeof(glm::vec3), &color);
+}
+
+void MeshSubpass::initDescriptors()
+{
+	descriptorPool.init(device, {{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1}}, 1);
+	descriptorSet.init(device, &descriptorPool, &descriptorSetLayout);
+	uniformBufferDescriptor.setType(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+	uniformBufferDescriptor.addDescriptorInfo({uniformBuffer, 0, sizeof(glm::vec3)});
+	descriptorSet.bind(&uniformBufferDescriptor);
+	descriptorSet.update();
 }

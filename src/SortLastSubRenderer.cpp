@@ -1,6 +1,6 @@
 #include "SortLastSubRenderer.h"
 #include <bp/Util.h>
-#include "ParallelCopy.h"
+#include <bp/Util.h>
 
 using namespace bp;
 
@@ -102,8 +102,8 @@ void SortLastSubRenderer::copyToTarget()
 		size_t colorSize = colorAttachment.getWidth() * colorAttachment.getHeight() * 4;
 		size_t depthSize = depthAttachment.getWidth() * depthAttachment.getHeight() * 2;
 
-		parallelCopy({{colorSrc, colorDst, colorSize},
-			      {depthSrc, depthDst, depthSize}});
+		parallelCopy(colorDst, colorSrc, colorSize);
+		parallelCopy(depthDst, depthSrc, depthSize);
 
 		colorAttachment.getImage()->unmap(false);
 		depthAttachment.getImage()->unmap(false);
