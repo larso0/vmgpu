@@ -17,9 +17,9 @@ void MeshSubpass::setColor(const glm::vec3& color)
 	if (initialized) uniformBuffer.transfer(0, sizeof(glm::vec3), &color);
 }
 
-void MeshSubpass::init(bp::NotNull<bp::RenderPass> renderPass)
+void MeshSubpass::init(RenderPass& renderPass)
 {
-	MeshSubpass::renderPass = renderPass;
+	MeshSubpass::renderPass = &renderPass;
 	initShaders();
 	initDescriptorSetLayout();
 	initPipelineLayout();
@@ -62,11 +62,11 @@ void MeshSubpass::render(VkCommandBuffer cmdBuffer)
 void MeshSubpass::initShaders()
 {
 	auto vertexShaderCode = readBinaryFile("spv/basic.vert.spv");
-	vertexShader.init(device, VK_SHADER_STAGE_VERTEX_BIT,
+	vertexShader.init(*device, VK_SHADER_STAGE_VERTEX_BIT,
 			  static_cast<uint32_t>(vertexShaderCode.size()),
 			  reinterpret_cast<const uint32_t*>(vertexShaderCode.data()));
 	auto fragmentShaderCode = readBinaryFile("spv/basic.frag.spv");
-	fragmentShader.init(device, VK_SHADER_STAGE_FRAGMENT_BIT,
+	fragmentShader.init(*device, VK_SHADER_STAGE_FRAGMENT_BIT,
 			    static_cast<uint32_t>(fragmentShaderCode.size()),
 			    reinterpret_cast<const uint32_t*>(fragmentShaderCode.data()));
 }
@@ -75,14 +75,14 @@ void MeshSubpass::initDescriptorSetLayout()
 {
 	descriptorSetLayout.addLayoutBinding({0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1,
 					      VK_SHADER_STAGE_FRAGMENT_BIT, nullptr});
-	descriptorSetLayout.init(device);
+	descriptorSetLayout.init(*device);
 }
 
 void MeshSubpass::initPipelineLayout()
 {
 	pipelineLayout.addDescriptorSetLayout(descriptorSetLayout);
 	pipelineLayout.addPushConstantRange({VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PushConstant)});
-	pipelineLayout.init(device);
+	pipelineLayout.init(*device);
 }
 
 void MeshSubpass::initPipeline()
@@ -94,31 +94,31 @@ void MeshSubpass::initPipeline()
 						Vertex::POSITION_OFFSET});
 	pipeline.addVertexAttributeDescription({1, 0, VK_FORMAT_R32G32B32_SFLOAT,
 						Vertex::NORMAL_OFFSET});
-	pipeline.init(device, renderPass, pipelineLayout);
+	pipeline.init(*device, *renderPass, pipelineLayout);
 }
 
 void MeshSubpass::initBuffers()
 {
-	vertexBuffer.init(device, mesh->getVertexDataSize(),
+	vertexBuffer.init(*device, mesh->getVertexDataSize(),
 			  VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
 			  VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 	vertexBuffer.transfer(0, VK_WHOLE_SIZE, mesh->getVertexDataPtr());
 
-	indexBuffer.init(device, mesh->getIndexDataSize(),
+	indexBuffer.init(*device, mesh->getIndexDataSize(),
 			 VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
 			 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 	indexBuffer.transfer(0, VK_WHOLE_SIZE, mesh->getIndexDataPtr());
-	uniformBuffer.init(device, sizeof(glm::vec3), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+	uniformBuffer.init(*device, sizeof(glm::vec3), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
 			   VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 	uniformBuffer.transfer(0, sizeof(glm::vec3), &color);
 }
 
 void MeshSubpass::initDescriptors()
 {
-	descriptorPool.init(device, {{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1}}, 1);
-	descriptorSet.init(device, &descriptorPool, &descriptorSetLayout);
+	descriptorPool.init(*device, {{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1}}, 1);
+	descriptorSet.init(*device, descriptorPool, descriptorSetLayout);
 	uniformBufferDescriptor.setType(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
 	uniformBufferDescriptor.addDescriptorInfo({uniformBuffer, 0, sizeof(glm::vec3)});
-	descriptorSet.bind(&uniformBufferDescriptor);
+	descriptorSet.bind(uniformBufferDescriptor);
 	descriptorSet.update();
 }

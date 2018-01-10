@@ -9,16 +9,16 @@ SortLastSubRenderer::~SortLastSubRenderer()
 	if (targetColorTexture != &colorAttachment) delete targetColorTexture;
 }
 
-void SortLastSubRenderer::init(NotNull<Device> renderDevice, NotNull<Device> targetDevice,
-				uint32_t width, uint32_t height, NotNull<Subpass> subpass)
+void SortLastSubRenderer::init(Device& renderDevice, Device& targetDevice, uint32_t width,
+			       uint32_t height, Subpass& subpass)
 {
-	SortLastSubRenderer::renderDevice = renderDevice;
-	SortLastSubRenderer::targetDevice = targetDevice;
-	SortLastSubRenderer::subpass = subpass;
+	SortLastSubRenderer::renderDevice = &renderDevice;
+	SortLastSubRenderer::targetDevice = &targetDevice;
+	SortLastSubRenderer::subpass = &subpass;
 
 	FlagSet<Texture::UsageFlags> colorUserFlags;
 	colorUserFlags << Texture::UsageFlags::COLOR_ATTACHMENT;
-	if (targetDevice == renderDevice)
+	if (&targetDevice == &renderDevice)
 		colorUserFlags << Texture::UsageFlags::SHADER_READABLE;
 
 	colorAttachment.setUsageFlags(colorUserFlags);
@@ -32,7 +32,7 @@ void SortLastSubRenderer::init(NotNull<Device> renderDevice, NotNull<Device> tar
 						 << Texture::UsageFlags::SHADER_READABLE);
 	targetDepthTexture.init(targetDevice, VK_FORMAT_D16_UNORM, width, height);
 
-	if (targetDevice == renderDevice)
+	if (&targetDevice == &renderDevice)
 	{
 		targetColorTexture = &colorAttachment;
 	} else
@@ -42,14 +42,14 @@ void SortLastSubRenderer::init(NotNull<Device> renderDevice, NotNull<Device> tar
 							 << Texture::UsageFlags::SHADER_READABLE);
 	}
 
-	subpass->addColorAttachment(&colorAttachment);
-	subpass->setDepthAttachment(&depthAttachment);
+	subpass.addColorAttachment(colorAttachment);
+	subpass.setDepthAttachment(depthAttachment);
 
 	renderPass.addSubpassGraph(subpass);
 	renderPass.init(width, height);
 	renderPass.setRenderArea({{}, {width, height}});
 
-	cmdPool.init(renderDevice->getGraphicsQueue());
+	cmdPool.init(renderDevice.getGraphicsQueue());
 	renderCmdBuffer = cmdPool.allocateCommandBuffer();
 }
 

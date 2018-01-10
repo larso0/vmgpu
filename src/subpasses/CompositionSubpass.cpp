@@ -10,9 +10,9 @@ CompositionSubpass::~CompositionSubpass()
 	if (sampler != VK_NULL_HANDLE) vkDestroySampler(*device, sampler, nullptr);
 }
 
-void CompositionSubpass::init(NotNull<RenderPass> renderPass)
+void CompositionSubpass::init(RenderPass& renderPass)
 {
-	CompositionSubpass::renderPass = renderPass;
+	CompositionSubpass::renderPass = &renderPass;
 
 	initShaders();
 	initDescriptorSetLayout();
@@ -55,15 +55,24 @@ void CompositionSubpass::render(VkCommandBuffer cmdBuffer)
 	}
 }
 
-unsigned CompositionSubpass::addTexture(const VkRect2D& area, NotNull<Texture> texture,
-					Texture* depthTexture)
+unsigned CompositionSubpass::addTexture(const VkRect2D& area, bp::Texture& texture)
 {
 	if (initialized) throw runtime_error("Texture must be added before initialization.");
-	textures.push_back(texture.get());
-	if (depthTexture != nullptr) depthTextures.push_back(depthTexture);
-	else if (depthTestEnabled) throw runtime_error("No depth texture provided.");
+	if (depthTestEnabled)
+		throw runtime_error("Depth test is enabled, but no depth texture provided.");
 	areas.push_back(area);
-	textureCount++;
+	textures.push_back(&texture);
+	return textureCount++;
+}
+
+unsigned CompositionSubpass::addTexture(const VkRect2D& area, Texture& texture,
+					Texture& depthTexture)
+{
+	if (initialized) throw runtime_error("Texture must be added before initialization.");
+	areas.push_back(area);
+	textures.push_back(&texture);
+	depthTextures.push_back(&depthTexture);
+	return textureCount++;
 }
 
 void CompositionSubpass::resizeTextureResources(unsigned index, const VkRect2D& newArea)
@@ -74,14 +83,14 @@ void CompositionSubpass::resizeTextureResources(unsigned index, const VkRect2D& 
 		descriptors[index].resetDescriptorInfos();
 		descriptors[index].addDescriptorInfo({sampler, textures[index]->getImageView(),
 						      VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL});
-		descriptorSets[index].bind(&descriptors[index]);
+		descriptorSets[index].bind(descriptors[index]);
 		if (depthTestEnabled)
 		{
 			depthDescriptors[index].resetDescriptorInfos();
 			depthDescriptors[index].addDescriptorInfo(
 				{sampler, depthTextures[index]->getImageView(),
 				 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL});
-			descriptorSets[index].bind(&depthDescriptors[index]);
+			descriptorSets[index].bind(depthDescriptors[index]);
 		}
 		descriptorSets[index].update();
 	}
@@ -90,7 +99,7 @@ void CompositionSubpass::resizeTextureResources(unsigned index, const VkRect2D& 
 void CompositionSubpass::initShaders()
 {
 	auto vertexShaderCode = readBinaryFile("spv/compositeQuad.vert.spv");
-	vertexShader.init(device, VK_SHADER_STAGE_VERTEX_BIT,
+	vertexShader.init(*device, VK_SHADER_STAGE_VERTEX_BIT,
 			  static_cast<uint32_t>(vertexShaderCode.size()),
 			  reinterpret_cast<const uint32_t*>(vertexShaderCode.data()));
 
@@ -99,7 +108,7 @@ void CompositionSubpass::initShaders()
 		fragmentShaderCode = readBinaryFile("spv/directTextureDepthTest.frag.spv");
 	else
 		fragmentShaderCode = readBinaryFile("spv/directTexture.frag.spv");
-	fragmentShader.init(device, VK_SHADER_STAGE_FRAGMENT_BIT,
+	fragmentShader.init(*device, VK_SHADER_STAGE_FRAGMENT_BIT,
 			    static_cast<uint32_t>(fragmentShaderCode.size()),
 			    reinterpret_cast<const uint32_t*>(fragmentShaderCode.data()));
 }
@@ -113,14 +122,14 @@ void CompositionSubpass::initDescriptorSetLayout()
 		descriptorSetLayout.addLayoutBinding({1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
 						      1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr});
 	}
-	descriptorSetLayout.init(device);
+	descriptorSetLayout.init(*device);
 }
 
 void CompositionSubpass::initPipelineLayout()
 {
 	pipelineLayout.addDescriptorSetLayout(descriptorSetLayout);
 	pipelineLayout.addPushConstantRange({VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PushConstant)});
-	pipelineLayout.init(device);
+	pipelineLayout.init(*device);
 }
 
 void CompositionSubpass::initPipeline()
@@ -129,7 +138,7 @@ void CompositionSubpass::initPipeline()
 	pipeline.addShaderStageInfo(fragmentShader.getPipelineShaderStageInfo());
 	pipeline.setPrimitiveTopology(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP);
 	pipeline.setFrontFace(VK_FRONT_FACE_CLOCKWISE);
-	pipeline.init(device, renderPass, pipelineLayout);
+	pipeline.init(*device, *renderPass, pipelineLayout);
 }
 
 void CompositionSubpass::initSampler()
@@ -159,7 +168,7 @@ void CompositionSubpass::initSampler()
 
 void CompositionSubpass::initDescriptors()
 {
-	descriptorPool.init(device,
+	descriptorPool.init(*device,
 			    {{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, textureCount * 2}},
 			    textureCount);
 	descriptorSets.reserve(textureCount);
@@ -171,12 +180,12 @@ void CompositionSubpass::initDescriptors()
 		descriptors.emplace_back();
 		if (depthTestEnabled) depthDescriptors.emplace_back();
 		descriptorSets.emplace_back();
-		descriptorSets[i].init(device, &descriptorPool, &descriptorSetLayout);
+		descriptorSets[i].init(*device, descriptorPool, descriptorSetLayout);
 
 		descriptors[i].setType(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
 		descriptors[i].addDescriptorInfo({sampler, textures[i]->getImageView(),
 						      VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL});
-		descriptorSets[i].bind(&descriptors[i]);
+		descriptorSets[i].bind(descriptors[i]);
 		if (depthTestEnabled)
 		{
 			depthDescriptors[i].setType(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
@@ -184,7 +193,7 @@ void CompositionSubpass::initDescriptors()
 			depthDescriptors[i].addDescriptorInfo(
 				{sampler, depthTextures[i]->getImageView(),
 				 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL});
-			descriptorSets[i].bind(&depthDescriptors[i]);
+			descriptorSets[i].bind(depthDescriptors[i]);
 		}
 		descriptorSets[i].update();
 	}

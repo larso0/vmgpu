@@ -144,7 +144,7 @@ int main(int argc, char** argv)
 		return 3;
 	}
 
-	renderer->init(&instance, options.width, options.height, &mesh);
+	renderer->init(instance, options.width, options.height, mesh);
 
 	if (options.mode == Mode::SortLast)
 	{

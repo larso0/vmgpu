@@ -5,11 +5,11 @@
 using namespace bp;
 using namespace std;
 
-void SortLastRenderer::init(bp::NotNull<bp::Instance> instance, uint32_t width, uint32_t height,
-			    bp::NotNull<bpScene::Mesh> mesh)
+void SortLastRenderer::init(Instance& instance, uint32_t width, uint32_t height,
+			    bpScene::Mesh& mesh)
 {
-	SortLastRenderer::instance = instance;
-	SortLastRenderer::mesh = mesh;
+	SortLastRenderer::instance = &instance;
+	SortLastRenderer::mesh = &mesh;
 
 	devices.reserve(deviceCount);
 	subRenderers.reserve(deviceCount);
@@ -23,7 +23,7 @@ void SortLastRenderer::init(bp::NotNull<bp::Instance> instance, uint32_t width, 
 	camera.update();
 
 	//Initialize window
-	window.init(*instance, width, height, "vmgpu");
+	window.init(instance, width, height, "vmgpu");
 	width = window.getWidth();
 	height = window.getHeight();
 
@@ -33,26 +33,26 @@ void SortLastRenderer::init(bp::NotNull<bp::Instance> instance, uint32_t width, 
 	requirements.features.samplerAnisotropy = VK_TRUE;
 	requirements.surface = window;
 	requirements.extensions.push_back("VK_KHR_swapchain");
-	devices.emplace_back(*instance, requirements);
+	devices.emplace_back(instance, requirements);
 
 	//Setup attachments and subpass for composition
 	swapchain.setClearEnabled(true);
 	swapchain.setClearValue({0.2f, 0.2f, 0.2f, 1.0});
-	swapchain.init(&devices[0], window, width, height, false);
+	swapchain.init(devices[0], window, width, height, false);
 
 	depthAttachment.setClearEnabled(true);
 	depthAttachment.setClearValue({1.f, 0.f});
-	depthAttachment.init(&devices[0], width, height);
+	depthAttachment.init(devices[0], width, height);
 
 	compositionSubpass.setDepthTestEnabled(true);
-	compositionSubpass.addColorAttachment(&swapchain);
-	compositionSubpass.setDepthAttachment(&depthAttachment);
-	compositionRenderPass.addSubpassGraph(&compositionSubpass);
+	compositionSubpass.addColorAttachment(swapchain);
+	compositionSubpass.setDepthAttachment(depthAttachment);
+	compositionRenderPass.addSubpassGraph(compositionSubpass);
 
 	//Find the remaining devices
 	requirements.surface = VK_NULL_HANDLE;
 	requirements.extensions.clear();
-	auto availableDevices = queryDevices(*instance, requirements);
+	auto availableDevices = queryDevices(instance, requirements);
 
 	for (uint32_t i = 1; i < deviceCount; i++)
 	{
@@ -66,10 +66,10 @@ void SortLastRenderer::init(bp::NotNull<bp::Instance> instance, uint32_t width, 
 		devices.emplace_back(selected, requirements);
 	}
 
-	uint32_t meshPortion = mesh->getElementCount() / deviceCount;
+	uint32_t meshPortion = mesh.getElementCount() / deviceCount;
 	meshPortion -= meshPortion % 3;
 	uint32_t firstMeshPortion = meshPortion
-				    + (mesh->getElementCount() - meshPortion * deviceCount);
+				    + (mesh.getElementCount() - meshPortion * deviceCount);
 	uint32_t offset = 0;
 
 	//Setup sub renderers
@@ -78,11 +78,11 @@ void SortLastRenderer::init(bp::NotNull<bp::Instance> instance, uint32_t width, 
 		uint32_t elementCount = i == 0 ? firstMeshPortion : meshPortion;
 
 		subpasses.emplace_back();
-		subpasses[i].setScene(mesh, offset, elementCount, &meshNode, &camera);
+		subpasses[i].setScene(mesh, offset, elementCount, meshNode, camera);
 		offset += elementCount;
 
 		subRenderers.emplace_back();
-		subRenderers[i].init(&devices[i], &devices[0], width, height, &subpasses[i]);
+		subRenderers[i].init(devices[i], devices[0], width, height, subpasses[i]);
 
 		compositionSubpass.addTexture({{}, {width, height}},
 					      subRenderers[i].getTargetColorTexture(),

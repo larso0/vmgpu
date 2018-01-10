@@ -3,11 +3,11 @@
 using namespace bp;
 using namespace bpScene;
 
-void SingleRenderer::init(NotNull<Instance> instance, uint32_t width, uint32_t height,
-			  NotNull<Mesh> mesh)
+void SingleRenderer::init(Instance& instance, uint32_t width, uint32_t height,
+			  Mesh& mesh)
 {
-	SingleRenderer::instance = instance;
-	SingleRenderer::mesh = mesh;
+	SingleRenderer::instance = &instance;
+	SingleRenderer::mesh = &mesh;
 
 	float aspectRatio = static_cast<float>(width) / static_cast<float>(height);
 	camera.setPerspectiveProjection(glm::radians(60.f), aspectRatio, 0.01f, 1000.f);
@@ -15,7 +15,7 @@ void SingleRenderer::init(NotNull<Instance> instance, uint32_t width, uint32_t h
 	sceneRoot.update();
 	camera.update();
 
-	window.init(*instance, width, height, "vmgpu");
+	window.init(instance, width, height, "vmgpu");
 	width = window.getWidth();
 	height = window.getHeight();
 
@@ -25,21 +25,21 @@ void SingleRenderer::init(NotNull<Instance> instance, uint32_t width, uint32_t h
 	requirements.features.geometryShader = VK_TRUE;
 	requirements.surface = window;
 	requirements.extensions.push_back("VK_KHR_swapchain");
-	device.init(*instance, requirements);
+	device.init(instance, requirements);
 
 	swapchain.setClearEnabled(true);
 	swapchain.setClearValue({0.2f, 0.2f, 0.2f, 1.0});
-	swapchain.init(&device, window, width, height, true);
+	swapchain.init(device, window, width, height, true);
 
 	depthAttachment.setClearEnabled(true);
 	depthAttachment.setClearValue({1.f, 0.f});
-	depthAttachment.init(&device, width, height);
+	depthAttachment.init(device, width, height);
 
-	meshSubpass.setScene(mesh, 0, mesh->getElementCount(), &meshNode, &camera);
-	meshSubpass.addColorAttachment(&swapchain);
-	meshSubpass.setDepthAttachment(&depthAttachment);
+	meshSubpass.setScene(mesh, 0, mesh.getElementCount(), meshNode, camera);
+	meshSubpass.addColorAttachment(swapchain);
+	meshSubpass.setDepthAttachment(depthAttachment);
 
-	renderPass.addSubpassGraph(&meshSubpass);
+	renderPass.addSubpassGraph(meshSubpass);
 	renderPass.setRenderArea({{}, {width, height}});
 	renderPass.init(width, height);
 

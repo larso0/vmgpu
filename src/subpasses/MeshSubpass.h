@@ -25,19 +25,19 @@ public:
 		camera{nullptr},
 		color{1.f, 0.f, 0.f} {}
 
-	void setScene(bp::NotNull<bpScene::Mesh> mesh, uint32_t offset, uint32_t count,
-		      bp::NotNull<bpScene::Node> meshNode, bp::NotNull<bpScene::Camera> camera)
+	void setScene(bpScene::Mesh& mesh, uint32_t offset, uint32_t count,
+		      bpScene::Node& meshNode, bpScene::Camera& camera)
 	{
-		MeshSubpass::mesh = mesh;
+		MeshSubpass::mesh = &mesh;
 		MeshSubpass::offset = offset;
 		MeshSubpass::count = count;
-		MeshSubpass::meshNode = meshNode;
-		MeshSubpass::camera = camera;
+		MeshSubpass::meshNode = &meshNode;
+		MeshSubpass::camera = &camera;
 	}
 
 	void setClipTransform(float x, float y, float w, float h);
 	void setColor(const glm::vec3& color);
-	void init(bp::NotNull<bp::RenderPass> renderPass) override;
+	void init(bp::RenderPass& renderPass) override;
 	void render(VkCommandBuffer cmdBuffer) override;
 
 private:

@@ -22,8 +22,8 @@ public:
 		camera{&cameraNode},
 		cmdBuffer{VK_NULL_HANDLE} {}
 
-	void init(bp::NotNull<bp::Instance> instance, uint32_t width, uint32_t height,
-		  bp::NotNull<bpScene::Mesh> mesh) override;
+	void init(bp::Instance& instance, uint32_t width, uint32_t height,
+		  bpScene::Mesh& mesh) override;
 	void render() override;
 	void update(float delta) override;
 

@@ -23,11 +23,11 @@ public:
 	~CompositionSubpass();
 
 	void setDepthTestEnabled(bool enabled) { depthTestEnabled = enabled; }
-	void init(bp::NotNull<bp::RenderPass> renderPass) override;
+	void init(bp::RenderPass& renderPass) override;
 	void render(VkCommandBuffer cmdBuffer) override;
 
-	unsigned addTexture(const VkRect2D& area, bp::NotNull<bp::Texture> texture,
-			    bp::Texture* depthTexture = nullptr);
+	unsigned addTexture(const VkRect2D& area, bp::Texture& texture);
+	unsigned addTexture(const VkRect2D& area, bp::Texture& texture, bp::Texture& depthTexture);
 	void resizeTextureResources(unsigned index, const VkRect2D& newArea);
 
 	unsigned getTextureCount() const { return textureCount; }
