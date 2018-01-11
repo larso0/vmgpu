@@ -29,6 +29,7 @@ struct Options
 	Mode mode;
 	string objPath;
 	uint32_t width, height;
+	uint32_t deviceCount;
 };
 
 Options parseOptions(int argc, char** argv)
@@ -44,7 +45,9 @@ Options parseOptions(int argc, char** argv)
 		 "mode for rendering: single, sort-first, or sort-last")
 		("borderless-window-compositing",
 		 "use borderless windows for compositing with sort-last method")
-		("file,f", po::value<string>(), "obj file to load 3D mesh from");
+		("file,f", po::value<string>(), "obj file to load 3D mesh from")
+		("count,c", po::value<uint32_t>()->default_value(2),
+		 "device count (how many devices/gpus to use)");
 	po::variables_map arguments;
 	po::store(po::parse_command_line(argc, argv, options), arguments);
 
@@ -85,12 +88,19 @@ Options parseOptions(int argc, char** argv)
 		}
 	}
 
+	if (result.mode != Mode::Single && arguments.count("count"))
+	{
+		result.deviceCount = arguments["count"].as<uint32_t>();
+		if (result.deviceCount < 2) result.mode = Mode::Single;
+	}
+
 	if (arguments.count("file"))
 	{
 		result.objPath = arguments["file"].as<string>();
 	} else
 	{
 		cerr << "Can't load mesh, no obj file was specified.\n";
+		cout << options << endl;
 		throw 2;
 	}
 
@@ -137,7 +147,11 @@ int main(int argc, char** argv)
 		renderer = new SingleRenderer();
 		break;
 	case Mode::SortLast:
-		renderer = new SortLastRenderer();
+	{
+		SortLastRenderer* slr = new SortLastRenderer();
+		slr->setDeviceCount(options.deviceCount);
+		renderer = slr;
+	}
 		break;
 	default:
 		cerr << "Mode not implemented." << endl;
@@ -148,7 +162,10 @@ int main(int argc, char** argv)
 
 	if (options.mode == Mode::SortLast)
 	{
-		static_cast<SortLastRenderer*>(renderer)->setColor(1, {0.f, 1.f, 0.f});
+		SortLastRenderer* slr = static_cast<SortLastRenderer*>(renderer);
+		slr->setColor(1, {0.f, 1.f, 0.f});
+		if (slr->getDeviceCount() > 2)
+			slr->setColor(2, {0.f, 0.f, 1.f});
 	}
 
 	double seconds = glfwGetTime();

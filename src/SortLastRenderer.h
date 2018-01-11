@@ -35,6 +35,7 @@ public:
 	void update(float delta) override;
 
 	bool shouldClose() override;
+	uint32_t getDeviceCount() const { return deviceCount; }
 
 private:
 	bp::Instance* instance;
