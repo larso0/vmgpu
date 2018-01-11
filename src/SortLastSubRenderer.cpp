@@ -107,14 +107,19 @@ void SortLastSubRenderer::copyToTarget()
 
 		colorAttachment.getImage().unmap(false);
 		depthAttachment.getImage().unmap(false);
+		targetColorTexture->getImage().unmap(false);
+		targetDepthTexture.getImage().unmap(false);
 	}
 }
 
-void SortLastSubRenderer::targetUnmap()
+void SortLastSubRenderer::prepareComposition(VkCommandBuffer cmdBuffer)
 {
-	if (targetDevice != renderDevice)
-	{
-		targetColorTexture->getImage().unmap();
-		targetDepthTexture.getImage().unmap();
-	}
+	targetColorTexture->getImage().flushStagingBuffer(cmdBuffer);
+	targetDepthTexture.getImage().flushStagingBuffer(cmdBuffer);
+	targetColorTexture->getImage().transition(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+						  VK_ACCESS_SHADER_READ_BIT,
+						  VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, cmdBuffer);
+	targetDepthTexture.getImage().transition(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+						 VK_ACCESS_SHADER_READ_BIT,
+						 VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, cmdBuffer);
 }

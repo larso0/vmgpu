@@ -23,7 +23,7 @@ public:
 	void resize(uint32_t width, uint32_t height);
 	void render();
 	void copyToTarget();
-	void targetUnmap();
+	void prepareComposition(VkCommandBuffer cmdBuffer);
 
 	bp::Texture& getTargetDepthTexture() { return targetDepthTexture; }
 	bp::Texture& getTargetColorTexture() { return *targetColorTexture; }

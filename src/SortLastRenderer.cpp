@@ -134,7 +134,6 @@ void SortLastRenderer::render()
 	for (auto& r : subRenderers)
 		futures.push_back(async(launch::async, [&r]{ r.copyToTarget(); }));
 	for (auto& f : futures) f.wait();
-	for (auto& r : subRenderers) r.targetUnmap();
 
 	//Compositing
 	VkCommandBufferBeginInfo beginInfo = {};
@@ -142,6 +141,9 @@ void SortLastRenderer::render()
 	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
 	vkBeginCommandBuffer(compositionCmdBuffer, &beginInfo);
+
+	for (auto& r : subRenderers) r.prepareComposition(compositionCmdBuffer);
+
 	compositionRenderPass.render(compositionCmdBuffer);
 	vkEndCommandBuffer(compositionCmdBuffer);
 
