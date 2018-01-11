@@ -29,7 +29,7 @@ void SingleRenderer::init(Instance& instance, uint32_t width, uint32_t height,
 
 	swapchain.setClearEnabled(true);
 	swapchain.setClearValue({0.2f, 0.2f, 0.2f, 1.0});
-	swapchain.init(device, window, width, height, true);
+	swapchain.init(device, window, width, height, false);
 
 	depthAttachment.setClearEnabled(true);
 	depthAttachment.setClearValue({1.f, 0.f});
