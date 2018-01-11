@@ -73,16 +73,16 @@ void SortLastSubRenderer::render()
 	vkBeginCommandBuffer(renderCmdBuffer, &beginInfo);
 	renderPass.render(renderCmdBuffer);
 
-	depthAttachment.getImage()->updateStagingBuffer(renderCmdBuffer);
+	depthAttachment.getImage().updateStagingBuffer(renderCmdBuffer);
 	if (targetDevice == renderDevice)
 	{
-		targetDepthTexture.getImage()->transfer(*depthAttachment.getImage(),
+		targetDepthTexture.getImage().transfer(depthAttachment.getImage(),
 							renderCmdBuffer);
 		targetColorTexture->transitionShaderReadable(renderCmdBuffer);
 		targetDepthTexture.transitionShaderReadable(renderCmdBuffer);
 	} else
 	{
-		colorAttachment.getImage()->updateStagingBuffer(renderCmdBuffer);
+		colorAttachment.getImage().updateStagingBuffer(renderCmdBuffer);
 	}
 
 	vkEndCommandBuffer(renderCmdBuffer);
@@ -95,18 +95,18 @@ void SortLastSubRenderer::copyToTarget()
 {
 	if (targetDevice != renderDevice)
 	{
-		const void* colorSrc = colorAttachment.getImage()->map(0, VK_WHOLE_SIZE);
-		const void* depthSrc = depthAttachment.getImage()->map(0, VK_WHOLE_SIZE);
-		void* colorDst = targetColorTexture->getImage()->map(0, VK_WHOLE_SIZE);
-		void* depthDst = targetDepthTexture.getImage()->map(0, VK_WHOLE_SIZE);
+		const void* colorSrc = colorAttachment.getImage().map(0, VK_WHOLE_SIZE);
+		const void* depthSrc = depthAttachment.getImage().map(0, VK_WHOLE_SIZE);
+		void* colorDst = targetColorTexture->getImage().map(0, VK_WHOLE_SIZE);
+		void* depthDst = targetDepthTexture.getImage().map(0, VK_WHOLE_SIZE);
 		size_t colorSize = colorAttachment.getWidth() * colorAttachment.getHeight() * 4;
 		size_t depthSize = depthAttachment.getWidth() * depthAttachment.getHeight() * 2;
 
 		parallelCopy(colorDst, colorSrc, colorSize);
 		parallelCopy(depthDst, depthSrc, depthSize);
 
-		colorAttachment.getImage()->unmap(false);
-		depthAttachment.getImage()->unmap(false);
+		colorAttachment.getImage().unmap(false);
+		depthAttachment.getImage().unmap(false);
 	}
 }
 
@@ -114,7 +114,7 @@ void SortLastSubRenderer::targetUnmap()
 {
 	if (targetDevice != renderDevice)
 	{
-		targetColorTexture->getImage()->unmap();
-		targetDepthTexture.getImage()->unmap();
+		targetColorTexture->getImage().unmap();
+		targetDepthTexture.getImage().unmap();
 	}
 }
