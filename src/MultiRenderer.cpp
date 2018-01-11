@@ -1,15 +1,15 @@
-#include "SortLastRenderer.h"
+#include "MultiRenderer.h"
 #include <algorithm>
 #include <future>
 
 using namespace bp;
 using namespace std;
 
-void SortLastRenderer::init(Instance& instance, uint32_t width, uint32_t height,
+void MultiRenderer::init(Instance& instance, uint32_t width, uint32_t height,
 			    bpScene::Mesh& mesh)
 {
-	SortLastRenderer::instance = &instance;
-	SortLastRenderer::mesh = &mesh;
+	MultiRenderer::instance = &instance;
+	MultiRenderer::mesh = &mesh;
 
 	devices.reserve(deviceCount);
 	subRenderers.reserve(deviceCount);
@@ -40,13 +40,17 @@ void SortLastRenderer::init(Instance& instance, uint32_t width, uint32_t height,
 	swapchain.setClearValue({0.2f, 0.2f, 0.2f, 1.0});
 	swapchain.init(devices[0], window, width, height, false);
 
-	depthAttachment.setClearEnabled(true);
-	depthAttachment.setClearValue({1.f, 0.f});
-	depthAttachment.init(devices[0], width, height);
-
-	compositionSubpass.setDepthTestEnabled(true);
 	compositionSubpass.addColorAttachment(swapchain);
-	compositionSubpass.setDepthAttachment(depthAttachment);
+
+	if (strategy == Strategy::SORT_LAST)
+	{
+		depthAttachment.setClearEnabled(true);
+		depthAttachment.setClearValue({1.f, 0.f});
+		depthAttachment.init(devices[0], width, height);
+		compositionSubpass.setDepthTestEnabled(true);
+		compositionSubpass.setDepthAttachment(depthAttachment);
+	}
+
 	compositionRenderPass.addSubpassGraph(compositionSubpass);
 
 	//Find the remaining devices
@@ -66,27 +70,38 @@ void SortLastRenderer::init(Instance& instance, uint32_t width, uint32_t height,
 		devices.emplace_back(selected, requirements);
 	}
 
-	uint32_t meshPortion = mesh.getElementCount() / deviceCount;
-	meshPortion -= meshPortion % 3;
-	uint32_t firstMeshPortion = meshPortion
-				    + (mesh.getElementCount() - meshPortion * deviceCount);
-	uint32_t offset = 0;
+	auto renderAreas = calcululateSubRendererAreas(width, height);
+	auto portions = calculateMeshPortions();
 
 	//Setup sub renderers
 	for (uint32_t i = 0; i < deviceCount; i++)
 	{
-		uint32_t elementCount = i == 0 ? firstMeshPortion : meshPortion;
+		const auto& area = renderAreas[i];
 
 		subpasses.emplace_back();
-		subpasses[i].setScene(mesh, offset, elementCount, meshNode, camera);
-		offset += elementCount;
+		subpasses[i].setScene(mesh, portions[i].first, portions[i].second, meshNode,
+				      camera);
+		/*subpasses[i].setClipTransform(
+			static_cast<float>(area.offset.x) / static_cast<float>(width),
+			static_cast<float>(area.offset.y) / static_cast<float>(height),
+			static_cast<float>(area.extent.width) / static_cast<float>(width),
+			static_cast<float>(area.extent.height) / static_cast<float>(height)
+		);*/
 
 		subRenderers.emplace_back();
-		subRenderers[i].init(devices[i], devices[0], width, height, subpasses[i]);
+		subRenderers[i].init(strategy, devices[i], devices[0], renderAreas[i].extent.width,
+				     renderAreas[i].extent.height, subpasses[i]);
 
-		compositionSubpass.addTexture({{}, {width, height}},
-					      subRenderers[i].getTargetColorTexture(),
-					      subRenderers[i].getTargetDepthTexture());
+		if (strategy == Strategy::SORT_LAST)
+		{
+			compositionSubpass.addTexture(renderAreas[i],
+						      subRenderers[i].getTargetColorTexture(),
+						      subRenderers[i].getTargetDepthTexture());
+		} else
+		{
+			compositionSubpass.addTexture(renderAreas[i],
+						      subRenderers[i].getTargetColorTexture());
+		}
 	}
 
 	//Initialize resources for compositing
@@ -100,25 +115,33 @@ void SortLastRenderer::init(Instance& instance, uint32_t width, uint32_t height,
 	//Delegate for handling resizing of resources
 	connect(window.resizeEvent, [this](uint32_t w, uint32_t h){
 		swapchain.resize(w, h);
-		depthAttachment.resize(w, h);
+		if (strategy == Strategy::SORT_LAST) depthAttachment.resize(w, h);
 		compositionRenderPass.resize(w, h);
 		compositionRenderPass.setRenderArea({{}, {w, h}});
 		float aspectRatio = static_cast<float>(w) / static_cast<float>(h);
 		camera.setPerspectiveProjection(glm::radians(60.f), aspectRatio, 0.01f, 1000.f);
+		auto renderAreas = calcululateSubRendererAreas(w, h);
 		for (auto i = 0; i < deviceCount; i++)
 		{
+			const auto& area = renderAreas[i];
+			/*subpasses[i].setClipTransform(
+				static_cast<float>(area.offset.x) / static_cast<float>(w),
+				static_cast<float>(area.offset.y) / static_cast<float>(h),
+				static_cast<float>(area.extent.width) / static_cast<float>(w),
+				static_cast<float>(area.extent.height) / static_cast<float>(h)
+			);*/
 			subRenderers[i].resize(w, h);
-			compositionSubpass.resizeTextureResources(i, {{}, {w, h}});
+			compositionSubpass.resizeTextureResources(i, area);
 		}
 	});
 }
 
-void SortLastRenderer::setColor(uint32_t deviceIndex, const glm::vec3& color)
+void MultiRenderer::setColor(uint32_t deviceIndex, const glm::vec3& color)
 {
 	subpasses[deviceIndex].setColor(color);
 }
 
-void SortLastRenderer::render()
+void MultiRenderer::render()
 {
 	window.handleEvents();
 
@@ -154,22 +177,63 @@ void SortLastRenderer::render()
 	swapchain.present(compositionPassCompleteSem);
 }
 
-void SortLastRenderer::update(float delta)
+void MultiRenderer::update(float delta)
 {
 	meshNode.rotate(delta, {0.f, 1.f, 0.f});
 	meshNode.update();
 }
 
-bool SortLastRenderer::shouldClose()
+bool MultiRenderer::shouldClose()
 {
 	return static_cast<bool>(glfwWindowShouldClose(window.getHandle()));
 }
 
-bool SortLastRenderer::isDeviceChosen(VkPhysicalDevice device)
+bool MultiRenderer::isDeviceChosen(VkPhysicalDevice device)
 {
 	auto found = find_if(devices.begin(), devices.end(),
 			     [device](Device& other) -> bool{
 				     return other.getPhysicalHandle() == device;
 			     });
 	return found != devices.end();
+}
+
+vector<VkRect2D> MultiRenderer::calcululateSubRendererAreas(uint32_t width, uint32_t height)
+{
+	if (strategy == Strategy::SORT_LAST)
+	{
+		return vector<VkRect2D>(deviceCount, {{}, {width, height}});
+	}
+
+	uint32_t sliceHeight = height / deviceCount;
+	vector<VkRect2D> result;
+	for (uint32_t i = 0; i < deviceCount; i++)
+		result.push_back({{0, i * sliceHeight}, {width, sliceHeight}});
+	result[deviceCount - 1].extent.height += height - sliceHeight * deviceCount;
+	return result;
+}
+
+vector<pair<uint32_t, uint32_t>> MultiRenderer::calculateMeshPortions()
+{
+	if (strategy == Strategy::SORT_FIRST)
+	{
+		return vector<pair<uint32_t, uint32_t>>(
+			deviceCount,
+			pair<uint32_t, uint32_t>(0, mesh->getElementCount()));
+	}
+
+	uint32_t meshPortion = mesh->getElementCount() / deviceCount;
+	meshPortion -= meshPortion % 3;
+	uint32_t firstMeshPortion = meshPortion
+				    + (mesh->getElementCount() - meshPortion * deviceCount);
+	uint32_t offset = 0;
+
+	vector<pair<uint32_t, uint32_t>> result;
+	result.reserve(deviceCount);
+	for (uint32_t i = 0; i < deviceCount; i++)
+	{
+		uint32_t elementCount = i == 0 ? firstMeshPortion : meshPortion;
+		result.emplace_back(offset, elementCount);
+		offset += elementCount;
+	}
+	return result;
 }

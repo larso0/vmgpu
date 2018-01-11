@@ -9,7 +9,7 @@
 #include <cstring>
 #include "Renderer.h"
 #include "SingleRenderer.h"
-#include "SortLastRenderer.h"
+#include "MultiRenderer.h"
 
 using namespace bp;
 using namespace bpScene;
@@ -146,13 +146,22 @@ int main(int argc, char** argv)
 	case Mode::Single:
 		renderer = new SingleRenderer();
 		break;
-	case Mode::SortLast:
+	case Mode::SortFirst:
 	{
-		SortLastRenderer* slr = new SortLastRenderer();
+		MultiRenderer* slr = new MultiRenderer();
+		slr->setStrategy(MultiRenderer::Strategy::SORT_FIRST);
 		slr->setDeviceCount(options.deviceCount);
 		renderer = slr;
-	}
 		break;
+	}
+	case Mode::SortLast:
+	{
+		MultiRenderer* slr = new MultiRenderer();
+		slr->setStrategy(MultiRenderer::Strategy::SORT_LAST);
+		slr->setDeviceCount(options.deviceCount);
+		renderer = slr;
+		break;
+	}
 	default:
 		cerr << "Mode not implemented." << endl;
 		return 3;
@@ -160,9 +169,9 @@ int main(int argc, char** argv)
 
 	renderer->init(instance, options.width, options.height, mesh);
 
-	if (options.mode == Mode::SortLast)
+	if (options.mode == Mode::SortFirst || options.mode == Mode::SortLast)
 	{
-		SortLastRenderer* slr = static_cast<SortLastRenderer*>(renderer);
+		MultiRenderer* slr = static_cast<MultiRenderer*>(renderer);
 		slr->setColor(1, {0.f, 1.f, 0.f});
 		if (slr->getDeviceCount() > 2)
 			slr->setColor(2, {0.f, 0.f, 1.f});

@@ -4,7 +4,7 @@
 #include "Renderer.h"
 #include "subpasses/CompositionSubpass.h"
 #include "subpasses/MeshSubpass.h"
-#include "SortLastSubRenderer.h"
+#include "SubRenderer.h"
 #include <bpView/Window.h>
 #include <bp/Device.h>
 #include <bp/Swapchain.h>
@@ -13,11 +13,15 @@
 #include <bp/CommandPool.h>
 #include <bp/Semaphore.h>
 #include <vector>
+#include <utility>
 
-class SortLastRenderer : public Renderer
+class MultiRenderer : public Renderer
 {
 public:
-	SortLastRenderer() :
+	using Strategy = SubRenderer::Strategy;
+
+	MultiRenderer() :
+		strategy{Strategy::SORT_LAST},
 		instance{nullptr},
 		mesh{nullptr},
 		meshNode{&sceneRoot},
@@ -26,7 +30,7 @@ public:
 		deviceCount{2},
 		compositionCmdBuffer{VK_NULL_HANDLE} {}
 
-
+	void setStrategy(Strategy strategy) { MultiRenderer::strategy = strategy; }
 	void setDeviceCount(uint32_t count) { deviceCount = count; }
 	void init(bp::Instance& instance, uint32_t width, uint32_t height,
 		  bpScene::Mesh& mesh) override;
@@ -38,6 +42,7 @@ public:
 	uint32_t getDeviceCount() const { return deviceCount; }
 
 private:
+	Strategy strategy;
 	bp::Instance* instance;
 	bpScene::Mesh* mesh;
 	bpScene::Node sceneRoot, meshNode, cameraNode;
@@ -47,7 +52,7 @@ private:
 
 	uint32_t deviceCount;
 	std::vector<bp::Device> devices;
-	std::vector<SortLastSubRenderer> subRenderers;
+	std::vector<SubRenderer> subRenderers;
 	std::vector<MeshSubpass> subpasses;
 
 	bp::Swapchain swapchain;
@@ -59,6 +64,8 @@ private:
 	VkCommandBuffer compositionCmdBuffer;
 
 	bool isDeviceChosen(VkPhysicalDevice device);
+	std::vector<VkRect2D> calcululateSubRendererAreas(uint32_t width, uint32_t height);
+	std::vector<std::pair<uint32_t, uint32_t>> calculateMeshPortions();
 };
 
 
