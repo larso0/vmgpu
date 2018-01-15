@@ -10,6 +10,7 @@
 #include "Renderer.h"
 #include "SingleRenderer.h"
 #include "MultiRenderer.h"
+#include "SortFirstBorderlessRenderer.h"
 
 using namespace bp;
 using namespace bpScene;
@@ -70,9 +71,13 @@ int main(int argc, char** argv)
 		renderer = slr;
 		break;
 	}
-	default:
-		cerr << "Mode not implemented." << endl;
-		return 3;
+	case Mode::SortFirstBorderlessWindowCompositing:
+	{
+		SortFirstBorderlessRenderer* r = new SortFirstBorderlessRenderer();
+		r->setDeviceCount(options.deviceCount);
+		renderer = r;
+		break;
+	}
 	}
 
 	renderer->init(instance, options.width, options.height, mesh);
