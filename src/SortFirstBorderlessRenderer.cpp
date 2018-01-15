@@ -10,9 +10,6 @@ void SortFirstBorderlessRenderer::init(Instance& instance, uint32_t width, uint3
 	SortFirstBorderlessRenderer::instance = &instance;
 	SortFirstBorderlessRenderer::mesh = &mesh;
 
-	subRenderers.reserve(deviceCount);
-	subpasses.reserve(deviceCount);
-
 	//Setup scene
 	float aspectRatio = static_cast<float>(width) / static_cast<float>(height);
 	camera.setPerspectiveProjection(glm::radians(60.f), aspectRatio, 0.01f, 1000.f);
@@ -36,13 +33,14 @@ void SortFirstBorderlessRenderer::init(Instance& instance, uint32_t width, uint3
 	if (physicalDevices.size() > deviceCount)
 		physicalDevices.resize(deviceCount);
 
-	auto portions = calculateMeshPortions();
 	areas = calcululateSubRendererAreas(width, height);
+
+	subRenderers.resize(deviceCount);
+	subpasses.resize(deviceCount);
 
 	for (auto i = 0; i < deviceCount; i++)
 	{
-		subpasses[i].setScene(mesh, portions[i].first, portions[i].second, meshNode,
-				      camera);
+		subpasses[i].setScene(mesh, 0, mesh.getElementCount(), meshNode, camera);
 		subRenderers[i].init(instance, physicalDevices[i], subpasses[i], areas[i]);
 	}
 }
@@ -79,24 +77,5 @@ vector<VkRect2D> SortFirstBorderlessRenderer::calcululateSubRendererAreas(uint32
 	for (uint32_t i = 0; i < deviceCount; i++)
 		result.push_back({{0, i * sliceHeight}, {width, sliceHeight}});
 	result[deviceCount - 1].extent.height += height - sliceHeight * deviceCount;
-	return result;
-}
-
-vector<pair<uint32_t, uint32_t>> SortFirstBorderlessRenderer::calculateMeshPortions()
-{
-	uint32_t meshPortion = mesh->getElementCount() / deviceCount;
-	meshPortion -= meshPortion % 3;
-	uint32_t firstMeshPortion = meshPortion
-				    + (mesh->getElementCount() - meshPortion * deviceCount);
-	uint32_t offset = 0;
-
-	vector<pair<uint32_t, uint32_t>> result;
-	result.reserve(deviceCount);
-	for (uint32_t i = 0; i < deviceCount; i++)
-	{
-		uint32_t elementCount = i == 0 ? firstMeshPortion : meshPortion;
-		result.emplace_back(offset, elementCount);
-		offset += elementCount;
-	}
 	return result;
 }

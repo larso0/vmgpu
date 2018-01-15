@@ -40,7 +40,6 @@ private:
 	std::vector<VkRect2D> areas;
 
 	std::vector<VkRect2D> calcululateSubRendererAreas(uint32_t width, uint32_t height);
-	std::vector<std::pair<uint32_t, uint32_t>> calculateMeshPortions();
 };
 
 

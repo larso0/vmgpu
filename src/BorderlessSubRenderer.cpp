@@ -23,7 +23,6 @@ void BorderlessSubRenderer::init(VkInstance instance, VkPhysicalDevice physicalD
 	swapchain.setClearEnabled(true);
 	swapchain.setClearValue({0.2f, 0.2f, 0.2f, 1.f});
 	swapchain.init(device, window, area.extent.width, area.extent.height, false);
-
 	depthAttachment.setClearEnabled(true);
 	depthAttachment.setClearValue({1.f, 0.f});
 	depthAttachment.init(device, area.extent.width, area.extent.height);
