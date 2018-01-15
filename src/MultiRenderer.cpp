@@ -5,8 +5,7 @@
 using namespace bp;
 using namespace std;
 
-void MultiRenderer::init(Instance& instance, uint32_t width, uint32_t height,
-			    bpScene::Mesh& mesh)
+void MultiRenderer::init(Instance& instance, uint32_t width, uint32_t height, bpScene::Mesh& mesh)
 {
 	MultiRenderer::instance = &instance;
 	MultiRenderer::mesh = &mesh;
@@ -63,10 +62,12 @@ void MultiRenderer::init(Instance& instance, uint32_t width, uint32_t height,
 		VkPhysicalDevice selected = devices[0];
 		for (VkPhysicalDevice device : availableDevices)
 		{
-			if (isDeviceChosen(device)) continue;
-			else break;
+			if (!isDeviceChosen(device))
+			{
+				selected = device;
+				break;
+			}
 		}
-
 		devices.emplace_back(selected, requirements);
 	}
 
