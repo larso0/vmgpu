@@ -14,10 +14,9 @@ Options parseOptions(int argc, char** argv)
 		("help", "print help message")
 		("resolution,r", po::value<string>()->default_value("1024x768"),
 		 "resolution of window: <width>x<height>")
-		("mode,m", po::value<string>()->default_value("single"),
-		 "mode for rendering: single, sort-first, or sort-last")
-		("borderless-window-compositing",
-		 "use borderless windows for compositing with sort-last method")
+		("strategy,s", po::value<string>()->default_value("single"),
+		 "strategy for rendering: single, sort-first, or sort-last")
+		("borderless,b", "use borderless windows for compositing with sort-first method")
 		("file,f", po::value<string>(), "obj file to load 3D mesh from")
 		("count,c", po::value<uint32_t>()->default_value(2),
 		 "device count (how many devices/gpus to use)");
@@ -43,7 +42,7 @@ Options parseOptions(int argc, char** argv)
 	}
 
 	{
-		string m = arguments["mode"].as<string>();
+		string m = arguments["strategy"].as<string>();
 		if (m == "single") result.mode = Mode::Single;
 		else if (m == "sort-first")
 		{
