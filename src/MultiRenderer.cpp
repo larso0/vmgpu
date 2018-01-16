@@ -45,7 +45,8 @@ void MultiRenderer::init(Instance& instance, uint32_t width, uint32_t height, bp
 	{
 		depthAttachment.setClearEnabled(true);
 		depthAttachment.setClearValue({1.f, 0.f});
-		depthAttachment.init(devices[0], width, height);
+		depthAttachment.init(devices[0], VK_FORMAT_D16_UNORM,
+				     VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, width, height);
 		compositionSubpass.setDepthTestEnabled(true);
 		compositionSubpass.setDepthAttachment(depthAttachment);
 	}

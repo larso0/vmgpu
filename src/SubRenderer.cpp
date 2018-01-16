@@ -9,8 +9,11 @@ using namespace std;
 
 SubRenderer::~SubRenderer()
 {
-	if (targetColorTexture != &colorAttachment) delete targetColorTexture;
-	delete targetDepthTexture;
+	if (targetDevice != renderDevice)
+	{
+		delete targetColorTexture;
+		delete targetDepthTexture;
+	}
 }
 
 void SubRenderer::init(Strategy strategy, Device& renderDevice, Device& targetDevice,
@@ -21,34 +24,36 @@ void SubRenderer::init(Strategy strategy, Device& renderDevice, Device& targetDe
 	SubRenderer::targetDevice = &targetDevice;
 	SubRenderer::subpass = &subpass;
 
-	FlagSet<Texture::UsageFlags> colorUserFlags;
-	colorUserFlags << Texture::UsageFlags::COLOR_ATTACHMENT;
-	if (&targetDevice == &renderDevice)
-		colorUserFlags << Texture::UsageFlags::SHADER_READABLE;
+	VkImageUsageFlags colorUsageFlags = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+	VkImageUsageFlags depthUsageFlags = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
 
-	colorAttachment.setUsageFlags(colorUserFlags);
+	if (&targetDevice == &renderDevice)
+	{
+		colorUsageFlags |= VK_IMAGE_USAGE_SAMPLED_BIT;
+		depthUsageFlags |= VK_IMAGE_USAGE_SAMPLED_BIT;
+	}
+
 	colorAttachment.setClearEnabled(true);
 	colorAttachment.setClearValue({0.2f, 0.2f, 0.2f, 1.f});
-	colorAttachment.init(renderDevice, VK_FORMAT_R8G8B8A8_UNORM, width, height);
+	colorAttachment.init(renderDevice, VK_FORMAT_R8G8B8A8_UNORM, colorUsageFlags,
+			     width, height);
 	depthAttachment.setClearEnabled(true);
 	depthAttachment.setClearValue({1.f, 0.f});
-	depthAttachment.init(renderDevice, width, height);
-
-	if (strategy == Strategy::SORT_LAST)
-	{
-		targetDepthTexture = new Texture(targetDevice, VK_FORMAT_D16_UNORM, width, height,
-						 FlagSet<Texture::UsageFlags>()
-							 << Texture::UsageFlags::SHADER_READABLE);
-	}
+	depthAttachment.init(renderDevice, VK_FORMAT_D16_UNORM, depthUsageFlags, width, height);
 
 	if (&targetDevice == &renderDevice)
 	{
 		targetColorTexture = &colorAttachment;
+		targetDepthTexture = &depthAttachment;
 	} else
 	{
-		targetColorTexture = new Texture(targetDevice, VK_FORMAT_R8G8B8A8_UNORM, width,
-						 height, FlagSet<Texture::UsageFlags>()
-							 << Texture::UsageFlags::SHADER_READABLE);
+		targetColorTexture = new Texture(targetDevice, VK_FORMAT_R8G8B8A8_UNORM,
+						 VK_IMAGE_USAGE_SAMPLED_BIT, width, height);
+		if (strategy == Strategy::SORT_LAST)
+		{
+			targetDepthTexture = new Texture(targetDevice, VK_FORMAT_D16_UNORM,
+							 VK_IMAGE_USAGE_SAMPLED_BIT, width, height);
+		}
 	}
 
 	subpass.addColorAttachment(colorAttachment);
@@ -85,13 +90,13 @@ void SubRenderer::render()
 
 	if (targetDevice == renderDevice)
 	{
+		targetColorTexture->transitionShaderReadable(renderCmdBuffer,
+							     VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
 		if (strategy == Strategy::SORT_LAST)
 		{
-			targetDepthTexture->getImage().transfer(depthAttachment.getImage(),
-								renderCmdBuffer);
-			targetDepthTexture->transitionShaderReadable(renderCmdBuffer);
+			targetDepthTexture->transitionShaderReadable(
+				renderCmdBuffer, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
 		}
-		targetColorTexture->transitionShaderReadable(renderCmdBuffer);
 	} else
 	{
 		depthAttachment.getImage().updateStagingBuffer(renderCmdBuffer);

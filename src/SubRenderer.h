@@ -3,7 +3,6 @@
 
 #include <bp/Device.h>
 #include <bp/Texture.h>
-#include <bp/DepthAttachment.h>
 #include <bp/RenderPass.h>
 #include <bp/CommandPool.h>
 
@@ -41,7 +40,7 @@ private:
 	bp::Device* renderDevice;
 	bp::Device* targetDevice;
 	bp::Texture colorAttachment;
-	bp::DepthAttachment depthAttachment;
+	bp::Texture depthAttachment;
 	bp::Texture* targetColorTexture;
 	bp::Texture* targetDepthTexture;
 	bp::RenderPass renderPass;

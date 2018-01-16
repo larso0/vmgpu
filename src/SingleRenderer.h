@@ -5,7 +5,7 @@
 #include <bpView/Window.h>
 #include <bp/Device.h>
 #include <bp/Swapchain.h>
-#include <bp/DepthAttachment.h>
+#include <bp/Texture.h>
 #include <bp/RenderPass.h>
 #include <bp/CommandPool.h>
 #include <bp/Semaphore.h>
@@ -38,7 +38,7 @@ private:
 	bp::Window window;
 	bp::Device device;
 	bp::Swapchain swapchain;
-	bp::DepthAttachment depthAttachment;
+	bp::Texture depthAttachment;
 	MeshSubpass meshSubpass;
 	bp::RenderPass renderPass;
 	bp::CommandPool cmdPool;

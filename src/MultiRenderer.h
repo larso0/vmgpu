@@ -8,7 +8,7 @@
 #include <bpView/Window.h>
 #include <bp/Device.h>
 #include <bp/Swapchain.h>
-#include <bp/DepthAttachment.h>
+#include <bp/Texture.h>
 #include <bp/RenderPass.h>
 #include <bp/CommandPool.h>
 #include <bp/Semaphore.h>
@@ -56,7 +56,7 @@ private:
 	std::vector<MeshSubpass> subpasses;
 
 	bp::Swapchain swapchain;
-	bp::DepthAttachment depthAttachment;
+	bp::Texture depthAttachment;
 	CompositionSubpass compositionSubpass;
 	bp::RenderPass compositionRenderPass;
 	bp::CommandPool cmdPool;

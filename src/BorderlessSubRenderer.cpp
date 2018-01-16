@@ -25,7 +25,9 @@ void BorderlessSubRenderer::init(VkInstance instance, VkPhysicalDevice physicalD
 	swapchain.init(device, window, area.extent.width, area.extent.height, false);
 	depthAttachment.setClearEnabled(true);
 	depthAttachment.setClearValue({1.f, 0.f});
-	depthAttachment.init(device, area.extent.width, area.extent.height);
+	depthAttachment.init(device, VK_FORMAT_D16_UNORM,
+			     VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+			     area.extent.width, area.extent.height);
 
 	subpass.addColorAttachment(swapchain);
 	subpass.setDepthAttachment(depthAttachment);
