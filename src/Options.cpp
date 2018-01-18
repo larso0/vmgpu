@@ -42,28 +42,28 @@ Options parseOptions(int argc, char** argv)
 	}
 
 	{
-		string m = arguments["strategy"].as<string>();
-		if (m == "single") result.mode = Mode::Single;
-		else if (m == "sort-first")
+		string strategy = arguments["strategy"].as<string>();
+		if (strategy == "single") result.strategy = Strategy::Single;
+		else if (strategy == "sort-first")
 		{
 			if (arguments.count("borderless"))
-				result.mode = Mode::SortFirstBorderlessWindowCompositing;
+				result.strategy = Strategy::SortFirstBorderlessWindowCompositing;
 			else
-				result.mode = Mode::SortFirst;
-		} else if (m == "sort-last")
+				result.strategy = Strategy::SortFirst;
+		} else if (strategy == "sort-last")
 		{
-			result.mode = Mode::SortLast;
+			result.strategy = Strategy::SortLast;
 		} else
 		{
-			cerr << "Unknown rendering mode, using single as fallback mode." << endl;
-			result.mode = Mode::Single;
+			cerr << "Unknown rendering strategy, using single as fallback strategy." << endl;
+			result.strategy = Strategy::Single;
 		}
 	}
 
-	if (result.mode != Mode::Single && arguments.count("count"))
+	if (result.strategy != Strategy::Single && arguments.count("count"))
 	{
 		result.deviceCount = arguments["count"].as<uint32_t>();
-		if (result.deviceCount < 2) result.mode = Mode::Single;
+		if (result.deviceCount < 2) result.strategy = Strategy::Single;
 	}
 
 	if (arguments.count("file"))

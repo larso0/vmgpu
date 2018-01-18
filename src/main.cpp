@@ -50,12 +50,12 @@ int main(int argc, char** argv)
 
 	Renderer* renderer = nullptr;
 
-	switch (options.mode)
+	switch (options.strategy)
 	{
-	case Mode::Single:
+	case Strategy::Single:
 		renderer = new SingleRenderer();
 		break;
-	case Mode::SortFirst:
+	case Strategy::SortFirst:
 	{
 		MultiRenderer* slr = new MultiRenderer();
 		slr->setStrategy(MultiRenderer::Strategy::SORT_FIRST);
@@ -63,7 +63,7 @@ int main(int argc, char** argv)
 		renderer = slr;
 		break;
 	}
-	case Mode::SortLast:
+	case Strategy::SortLast:
 	{
 		MultiRenderer* slr = new MultiRenderer();
 		slr->setStrategy(MultiRenderer::Strategy::SORT_LAST);
@@ -71,7 +71,7 @@ int main(int argc, char** argv)
 		renderer = slr;
 		break;
 	}
-	case Mode::SortFirstBorderlessWindowCompositing:
+	case Strategy::SortFirstBorderlessWindowCompositing:
 	{
 		SortFirstBorderlessRenderer* r = new SortFirstBorderlessRenderer();
 		r->setDeviceCount(options.deviceCount);
@@ -82,7 +82,7 @@ int main(int argc, char** argv)
 
 	renderer->init(instance, options.width, options.height, mesh);
 
-	if (options.mode == Mode::SortFirst || options.mode == Mode::SortLast)
+	if (options.strategy == Strategy::SortFirst || options.strategy == Strategy::SortLast)
 	{
 		MultiRenderer* slr = static_cast<MultiRenderer*>(renderer);
 		slr->setColor(1, {0.f, 1.f, 0.f});

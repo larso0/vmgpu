@@ -4,7 +4,7 @@
 #include <string>
 #include <cstdint>
 
-enum class Mode
+enum class Strategy
 {
 	Single,
 	SortFirst,
@@ -14,7 +14,7 @@ enum class Mode
 
 struct Options
 {
-	Mode mode;
+	Strategy strategy;
 	std::string objPath;
 	uint32_t width, height;
 	uint32_t deviceCount;
