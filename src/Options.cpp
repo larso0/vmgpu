@@ -46,7 +46,7 @@ Options parseOptions(int argc, char** argv)
 		if (m == "single") result.mode = Mode::Single;
 		else if (m == "sort-first")
 		{
-			if (arguments.count("borderless-window-compositing"))
+			if (arguments.count("borderless"))
 				result.mode = Mode::SortFirstBorderlessWindowCompositing;
 			else
 				result.mode = Mode::SortFirst;

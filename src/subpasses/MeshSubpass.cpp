@@ -7,8 +7,9 @@ using namespace glm;
 
 void MeshSubpass::setClipTransform(float x, float y, float w, float h)
 {
-	clipTransform = translate(scale(mat4{}, {1.f / w, 1.f / h, 1.f}),
-				  {((0.5f + x) / w) - 0.5f, ((0.5f + y) / h) - 0.5f, 0.f});
+	clipTransform = scale(translate(mat4{}, {(2.f * x) / w - (1.f - w) / w,
+						 (2.f * y) / h - (1.f - h) / h, 0.f}),
+			      {1.f / w, 1.f / h, 1.f});
 }
 
 void MeshSubpass::setColor(const glm::vec3& color)

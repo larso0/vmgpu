@@ -83,12 +83,12 @@ void MultiRenderer::init(Instance& instance, uint32_t width, uint32_t height, bp
 		subpasses.emplace_back();
 		subpasses[i].setScene(mesh, portions[i].first, portions[i].second, meshNode,
 				      camera);
-		/*subpasses[i].setClipTransform(
+		subpasses[i].setClipTransform(
 			static_cast<float>(area.offset.x) / static_cast<float>(width),
 			static_cast<float>(area.offset.y) / static_cast<float>(height),
 			static_cast<float>(area.extent.width) / static_cast<float>(width),
 			static_cast<float>(area.extent.height) / static_cast<float>(height)
-		);*/
+		);
 
 		subRenderers.emplace_back();
 		subRenderers[i].init(strategy, devices[i], devices[0], renderAreas[i].extent.width,
@@ -126,12 +126,12 @@ void MultiRenderer::init(Instance& instance, uint32_t width, uint32_t height, bp
 		for (auto i = 0; i < deviceCount; i++)
 		{
 			const auto& area = renderAreas[i];
-			/*subpasses[i].setClipTransform(
+			subpasses[i].setClipTransform(
 				static_cast<float>(area.offset.x) / static_cast<float>(w),
 				static_cast<float>(area.offset.y) / static_cast<float>(h),
 				static_cast<float>(area.extent.width) / static_cast<float>(w),
 				static_cast<float>(area.extent.height) / static_cast<float>(h)
-			);*/
+			);
 			subRenderers[i].resize(w, h);
 			compositionSubpass.resizeTextureResources(i, area);
 		}

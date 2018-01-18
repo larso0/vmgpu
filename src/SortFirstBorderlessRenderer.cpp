@@ -41,6 +41,12 @@ void SortFirstBorderlessRenderer::init(Instance& instance, uint32_t width, uint3
 	for (auto i = 0; i < deviceCount; i++)
 	{
 		subpasses[i].setScene(mesh, 0, mesh.getElementCount(), meshNode, camera);
+		subpasses[i].setClipTransform(
+			static_cast<float>(areas[i].offset.x) / static_cast<float>(width),
+			static_cast<float>(areas[i].offset.y) / static_cast<float>(height),
+			static_cast<float>(areas[i].extent.width) / static_cast<float>(width),
+			static_cast<float>(areas[i].extent.height) / static_cast<float>(height)
+		);
 		subRenderers[i].init(instance, physicalDevices[i], subpasses[i], areas[i]);
 	}
 }
