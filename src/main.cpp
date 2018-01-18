@@ -22,9 +22,11 @@ int main(int argc, char** argv)
 	try { options = parseOptions(argc, argv); } catch (int e) { return e; }
 
 	Mesh mesh;
+	cout << "Loading '" << options.objPath << "'" << endl;
 	mesh.loadObj(options.objPath, FlagSet<Mesh::LoadFlags>()
 		<< Mesh::LoadFlags::POSITION
 		<< Mesh::LoadFlags::NORMAL);
+	cout << "Initializing renderer" << endl;
 
 	bpView::init();
 
@@ -90,6 +92,8 @@ int main(int argc, char** argv)
 			slr->setColor(2, {0.f, 0.f, 1.f});
 	}
 
+	cout << "Rendering" << endl;
+
 	double seconds = glfwGetTime();
 	double frametimeAccumulator = seconds;
 	unsigned frameCounter = 0;
@@ -106,13 +110,15 @@ int main(int argc, char** argv)
 			double diff = time - frametimeAccumulator;
 			frametimeAccumulator = time;
 			double fps = 50.0 / diff;
-			cout << '\r' << setprecision(4) << fps << "FPS";
+			cout << '\r' << setprecision(4) << fps << " FPS" << flush;
 		}
 
 		renderer->update(delta);
 	}
 
 	delete renderer;
+
+	cout << endl;
 
 	return 0;
 }
