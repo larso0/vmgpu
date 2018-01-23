@@ -59,7 +59,7 @@ void BorderlessSubRenderer::render()
 	renderPass.render(cmdBuffer);
 	vkEndCommandBuffer(cmdBuffer);
 
-	queue->submit({{swapchain.getPresentSemaphore(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT}},
+	queue->submit({{swapchain.getImageAvailableSemaphore(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT}},
 		      {cmdBuffer}, {renderCompleteSem});
 	queue->waitIdle();
 }
