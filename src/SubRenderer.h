@@ -22,7 +22,8 @@ public:
 		targetColorTexture{nullptr},
 		targetDepthTexture{nullptr},
 		subpass{nullptr},
-		renderCmdBuffer{VK_NULL_HANDLE} {}
+		renderCmdBuffer{VK_NULL_HANDLE},
+		queue{nullptr} {}
 	~SubRenderer();
 
 	void init(Strategy strategy, bp::Device& renderDevice, bp::Device& targetDevice,
@@ -47,6 +48,7 @@ private:
 	bp::Subpass* subpass;
 	bp::CommandPool cmdPool;
 	VkCommandBuffer renderCmdBuffer;
+	bp::Queue* queue;
 };
 
 

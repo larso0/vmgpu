@@ -33,6 +33,7 @@ void MultiRenderer::init(Instance& instance, uint32_t width, uint32_t height, bp
 	requirements.surface = window;
 	requirements.extensions.push_back("VK_KHR_swapchain");
 	devices.emplace_back(instance, requirements);
+	queue = &devices[0].getGraphicsQueue();
 
 	//Setup attachments and subpass for composition
 	swapchain.setClearEnabled(true);
@@ -172,9 +173,9 @@ void MultiRenderer::render()
 	compositionRenderPass.render(compositionCmdBuffer);
 	vkEndCommandBuffer(compositionCmdBuffer);
 
-	cmdPool.submit({{swapchain.getPresentSemaphore(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT}},
-		       {compositionCmdBuffer}, {compositionPassCompleteSem});
-	cmdPool.waitQueueIdle();
+	queue->submit({{swapchain.getPresentSemaphore(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT}},
+		      {compositionCmdBuffer}, {compositionPassCompleteSem});
+	queue->waitIdle();
 
 	swapchain.present(compositionPassCompleteSem);
 }

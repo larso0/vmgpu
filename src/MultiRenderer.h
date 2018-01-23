@@ -28,7 +28,8 @@ public:
 		cameraNode{&sceneRoot},
 		camera{&cameraNode},
 		deviceCount{2},
-		compositionCmdBuffer{VK_NULL_HANDLE} {}
+		compositionCmdBuffer{VK_NULL_HANDLE},
+		queue{nullptr} {}
 
 	void setStrategy(Strategy strategy) { MultiRenderer::strategy = strategy; }
 	void setDeviceCount(uint32_t count) { deviceCount = count; }
@@ -62,6 +63,7 @@ private:
 	bp::CommandPool cmdPool;
 	bp::Semaphore compositionPassCompleteSem;
 	VkCommandBuffer compositionCmdBuffer;
+	bp::Queue* queue;
 
 	bool isDeviceChosen(VkPhysicalDevice device);
 	std::vector<VkRect2D> calcululateSubRendererAreas(uint32_t width, uint32_t height);

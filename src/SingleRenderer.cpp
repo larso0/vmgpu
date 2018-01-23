@@ -26,6 +26,7 @@ void SingleRenderer::init(Instance& instance, uint32_t width, uint32_t height,
 	requirements.surface = window;
 	requirements.extensions.push_back("VK_KHR_swapchain");
 	device.init(instance, requirements);
+	queue = &device.getGraphicsQueue();
 
 	swapchain.setClearEnabled(true);
 	swapchain.setClearValue({0.2f, 0.2f, 0.2f, 1.0});
@@ -71,9 +72,9 @@ void SingleRenderer::render()
 	renderPass.render(cmdBuffer);
 	vkEndCommandBuffer(cmdBuffer);
 
-	cmdPool.submit({{swapchain.getPresentSemaphore(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT}},
-			{cmdBuffer}, {renderCompleteSem});
-	cmdPool.waitQueueIdle();
+	queue->submit({{swapchain.getPresentSemaphore(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT}},
+		      {cmdBuffer}, {renderCompleteSem});
+	queue->waitIdle();
 
 	swapchain.present(renderCompleteSem);
 }

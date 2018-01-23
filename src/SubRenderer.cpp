@@ -65,6 +65,7 @@ void SubRenderer::init(Strategy strategy, Device& renderDevice, Device& targetDe
 
 	cmdPool.init(renderDevice.getGraphicsQueue());
 	renderCmdBuffer = cmdPool.allocateCommandBuffer();
+	queue = &renderDevice.getGraphicsQueue();
 }
 
 void SubRenderer::resize(uint32_t width, uint32_t height)
@@ -105,8 +106,8 @@ void SubRenderer::render()
 
 	vkEndCommandBuffer(renderCmdBuffer);
 
-	cmdPool.submit({}, {renderCmdBuffer}, {});
-	cmdPool.waitQueueIdle();
+	queue->submit({}, {renderCmdBuffer}, {});
+	queue->waitIdle();
 }
 
 void SubRenderer::copyToTarget()

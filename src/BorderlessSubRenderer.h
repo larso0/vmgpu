@@ -31,6 +31,7 @@ private:
 	bp::Semaphore renderCompleteSem;
 	bp::CommandPool cmdPool;
 	VkCommandBuffer cmdBuffer;
+	bp::Queue* queue;
 };
 
 

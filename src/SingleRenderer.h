@@ -20,7 +20,8 @@ public:
 		meshNode{&sceneRoot},
 		cameraNode{&sceneRoot},
 		camera{&cameraNode},
-		cmdBuffer{VK_NULL_HANDLE} {}
+		cmdBuffer{VK_NULL_HANDLE},
+		queue{nullptr} {}
 
 	void init(bp::Instance& instance, uint32_t width, uint32_t height,
 		  bpScene::Mesh& mesh) override;
@@ -43,8 +44,8 @@ private:
 	bp::RenderPass renderPass;
 	bp::CommandPool cmdPool;
 	bp::Semaphore renderCompleteSem;
-
 	VkCommandBuffer cmdBuffer;
+	bp::Queue* queue;
 };
 
 

@@ -19,6 +19,7 @@ void BorderlessSubRenderer::init(VkInstance instance, VkPhysicalDevice physicalD
 	requirements.surface = window;
 	requirements.extensions.push_back("VK_KHR_swapchain");
 	device.init(physicalDevice, requirements);
+	queue = &device.getGraphicsQueue();
 
 	swapchain.setClearEnabled(true);
 	swapchain.setClearValue({0.2f, 0.2f, 0.2f, 1.f});
@@ -58,9 +59,9 @@ void BorderlessSubRenderer::render()
 	renderPass.render(cmdBuffer);
 	vkEndCommandBuffer(cmdBuffer);
 
-	cmdPool.submit({{swapchain.getPresentSemaphore(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT}},
-		       {cmdBuffer}, {renderCompleteSem});
-	cmdPool.waitQueueIdle();
+	queue->submit({{swapchain.getPresentSemaphore(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT}},
+		      {cmdBuffer}, {renderCompleteSem});
+	queue->waitIdle();
 }
 
 void BorderlessSubRenderer::present()
