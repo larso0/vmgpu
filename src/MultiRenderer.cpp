@@ -107,19 +107,12 @@ void MultiRenderer::init(Instance& instance, uint32_t width, uint32_t height, bp
 		}
 	}
 
-	//Initialize resources for compositing
-	compositionRenderPass.init(width, height);
-	compositionRenderPass.setRenderArea({{}, {width, height}});
+	//Handle window resize events
+	connect(window.resizeEvent, swapchain, &Swapchain::resize);
 
-	cmdPool.init(devices[0].getGraphicsQueue());
-	compositionPassCompleteSem.init(devices[0]);
-	compositionCmdBuffer = cmdPool.allocateCommandBuffer();
-
-	//Delegate for handling resizing of resources
-	connect(window.resizeEvent, [this](uint32_t w, uint32_t h){
-		swapchain.resize(w, h);
+	//Resize resources when the swapchain is resized
+	connect(swapchain.resizeEvent, [this](uint32_t w, uint32_t h){
 		if (strategy == Strategy::SORT_LAST) depthAttachment.resize(w, h);
-		compositionRenderPass.resize(w, h);
 		compositionRenderPass.setRenderArea({{}, {w, h}});
 		float aspectRatio = static_cast<float>(w) / static_cast<float>(h);
 		camera.setPerspectiveProjection(glm::radians(60.f), aspectRatio, 0.01f, 1000.f);
@@ -133,10 +126,18 @@ void MultiRenderer::init(Instance& instance, uint32_t width, uint32_t height, bp
 				static_cast<float>(area.extent.width) / static_cast<float>(w),
 				static_cast<float>(area.extent.height) / static_cast<float>(h)
 			);
-			subRenderers[i].resize(w, h);
+			subRenderers[i].resize(area.extent.width, area.extent.height);
 			compositionSubpass.resizeTextureResources(i, area);
 		}
 	});
+
+	//Initialize resources for compositing
+	compositionRenderPass.init(width, height);
+	compositionRenderPass.setRenderArea({{}, {width, height}});
+
+	cmdPool.init(devices[0].getGraphicsQueue());
+	compositionPassCompleteSem.init(devices[0]);
+	compositionCmdBuffer = cmdPool.allocateCommandBuffer();
 }
 
 void MultiRenderer::setColor(uint32_t deviceIndex, const glm::vec3& color)

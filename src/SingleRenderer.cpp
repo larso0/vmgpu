@@ -41,18 +41,17 @@ void SingleRenderer::init(Instance& instance, uint32_t width, uint32_t height,
 	meshSubpass.addColorAttachment(swapchain);
 	meshSubpass.setDepthAttachment(depthAttachment);
 
-	renderPass.addSubpassGraph(meshSubpass);
-	renderPass.setRenderArea({{}, {width, height}});
-	renderPass.init(width, height);
-
-	connect(window.resizeEvent, [this](uint32_t w, uint32_t h){
-		swapchain.resize(w, h);
+	connect(window.resizeEvent, swapchain, &Swapchain::resize);
+	connect(swapchain.resizeEvent, [this](uint32_t w, uint32_t h){
 		depthAttachment.resize(w, h);
-		renderPass.resize(w, h);
 		renderPass.setRenderArea({{}, {w, h}});
 		float aspectRatio = static_cast<float>(w) / static_cast<float>(h);
 		camera.setPerspectiveProjection(glm::radians(60.f), aspectRatio, 0.01f, 1000.f);
 	});
+
+	renderPass.addSubpassGraph(meshSubpass);
+	renderPass.setRenderArea({{}, {width, height}});
+	renderPass.init(width, height);
 
 	cmdPool.init(device.getGraphicsQueue());
 	renderCompleteSem.init(device);

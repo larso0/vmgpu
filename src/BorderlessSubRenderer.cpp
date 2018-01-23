@@ -30,6 +30,12 @@ void BorderlessSubRenderer::init(VkInstance instance, VkPhysicalDevice physicalD
 			     VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
 			     area.extent.width, area.extent.height);
 
+	connect(window.resizeEvent, swapchain, &Swapchain::resize);
+	connect(swapchain.resizeEvent, [&](uint32_t w, uint32_t h){
+		depthAttachment.resize(w, h);
+		renderPass.setRenderArea({{}, {w, h}});
+	});
+
 	subpass.addColorAttachment(swapchain);
 	subpass.setDepthAttachment(depthAttachment);
 
@@ -40,13 +46,6 @@ void BorderlessSubRenderer::init(VkInstance instance, VkPhysicalDevice physicalD
 	renderCompleteSem.init(device);
 	cmdPool.init(device.getGraphicsQueue());
 	cmdBuffer = cmdPool.allocateCommandBuffer();
-
-	//Delegate for handling resizing of resources
-	connect(window.resizeEvent, [this](uint32_t w, uint32_t h){
-		swapchain.resize(w, h);
-		depthAttachment.resize(w, h);
-		renderPass.resize(w, h);
-	});
 }
 
 void BorderlessSubRenderer::render()
