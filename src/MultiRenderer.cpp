@@ -3,6 +3,7 @@
 #include <future>
 
 using namespace bp;
+using namespace bpUtil;
 using namespace std;
 
 void MultiRenderer::init(Instance& instance, uint32_t width, uint32_t height, bpScene::Mesh& mesh)
@@ -11,8 +12,10 @@ void MultiRenderer::init(Instance& instance, uint32_t width, uint32_t height, bp
 	MultiRenderer::mesh = &mesh;
 
 	devices.reserve(deviceCount);
-	subRenderers.reserve(deviceCount);
+	secondaryRenderers.reserve(deviceCount - 1);
 	subpasses.reserve(deviceCount);
+	compositingColorSources.reserve(deviceCount);
+	compositingDepthSources.reserve(deviceCount);
 
 	//Setup scene
 	float aspectRatio = static_cast<float>(width) / static_cast<float>(height);
@@ -40,7 +43,7 @@ void MultiRenderer::init(Instance& instance, uint32_t width, uint32_t height, bp
 	swapchain.setClearValue({0.2f, 0.2f, 0.2f, 1.0});
 	swapchain.init(devices[0], window, width, height, false);
 
-	compositionSubpass.addColorAttachment(swapchain);
+	compositingSubpass.addColorAttachment(swapchain);
 
 	if (strategy == Strategy::SORT_LAST)
 	{
@@ -48,11 +51,11 @@ void MultiRenderer::init(Instance& instance, uint32_t width, uint32_t height, bp
 		depthAttachment.setClearValue({1.f, 0.f});
 		depthAttachment.init(devices[0], VK_FORMAT_D16_UNORM,
 				     VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, width, height);
-		compositionSubpass.setDepthTestEnabled(true);
-		compositionSubpass.setDepthAttachment(depthAttachment);
+		compositingSubpass.setDepthTestEnabled(true);
+		compositingSubpass.setDepthAttachment(depthAttachment);
 	}
 
-	compositionRenderPass.addSubpassGraph(compositionSubpass);
+	compositingRenderPass.addSubpassGraph(compositingSubpass);
 
 	//Find the remaining devices
 	requirements.surface = VK_NULL_HANDLE;
@@ -76,8 +79,31 @@ void MultiRenderer::init(Instance& instance, uint32_t width, uint32_t height, bp
 	auto renderAreas = calcululateSubRendererAreas(width, height);
 	auto portions = calculateMeshPortions();
 
-	//Setup sub renderers
-	for (uint32_t i = 0; i < deviceCount; i++)
+	const auto& area = renderAreas[0];
+
+	//Setup resources for the first GPU
+	renderColorAttachment.init(devices[0], VK_FORMAT_R8G8B8A8_UNORM,
+				   VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+				   area.extent.width, area.extent.height);
+	renderDepthAttachment.init(devices[0], VK_FORMAT_D16_UNORM,
+				   VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+				   area.extent.width, area.extent.height);
+	subpasses.emplace_back();
+	subpasses[0].setScene(mesh, portions[0].first, portions[0].second, meshNode, camera);
+	subpasses[0].setClipTransform(
+		static_cast<float>(area.offset.x) / static_cast<float>(width),
+		static_cast<float>(area.offset.y) / static_cast<float>(height),
+		static_cast<float>(area.extent.width) / static_cast<float>(width),
+		static_cast<float>(area.extent.height) / static_cast<float>(height)
+	);
+	subpasses[0].addColorAttachment(renderColorAttachment);
+	subpasses[0].setDepthAttachment(renderDepthAttachment);
+	renderPass.addSubpassGraph(subpasses[0]);
+	renderPass.setRenderArea({{}, {area.extent.width, area.extent.height}});
+	renderPass.init(area.extent.width, area.extent.height);
+
+	//Setup resources for secondary renderers
+	for (uint32_t i = 1; i < deviceCount; i++)
 	{
 		const auto& area = renderAreas[i];
 
@@ -91,19 +117,31 @@ void MultiRenderer::init(Instance& instance, uint32_t width, uint32_t height, bp
 			static_cast<float>(area.extent.height) / static_cast<float>(height)
 		);
 
-		subRenderers.emplace_back();
-		subRenderers[i].init(strategy, devices[i], devices[0], renderAreas[i].extent.width,
-				     renderAreas[i].extent.height, subpasses[i]);
+		secondaryRenderers.emplace_back();
+		secondaryRenderers[i - 1].init(strategy, devices[i], renderAreas[i].extent.width,
+					       renderAreas[i].extent.height, subpasses[i]);
+	}
 
+	//Setup textures for compositing
+	for (uint32_t i = 0; i < deviceCount; i++)
+	{
+		uint32_t w = renderAreas[i].extent.width;
+		uint32_t h = renderAreas[i].extent.height;
+		compositingColorSources.emplace_back(devices[0], VK_FORMAT_R8G8B8A8_UNORM,
+						     VK_IMAGE_USAGE_SAMPLED_BIT, w, h);
+		mappedColorDst.push_back(
+			compositingColorSources[i].getImage().map(0, VK_WHOLE_SIZE));
 		if (strategy == Strategy::SORT_LAST)
 		{
-			compositionSubpass.addTexture(renderAreas[i],
-						      subRenderers[i].getTargetColorTexture(),
-						      subRenderers[i].getTargetDepthTexture());
+			compositingDepthSources.emplace_back(devices[0], VK_FORMAT_D16_UNORM,
+							     VK_IMAGE_USAGE_SAMPLED_BIT, w, h);
+			mappedDepthDst.push_back(
+				compositingDepthSources[i].getImage().map(0, VK_WHOLE_SIZE));
+			compositingSubpass.addTexture(renderAreas[i], compositingColorSources[i],
+						      compositingDepthSources[i]);
 		} else
 		{
-			compositionSubpass.addTexture(renderAreas[i],
-						      subRenderers[i].getTargetColorTexture());
+			compositingSubpass.addTexture(renderAreas[i], compositingColorSources[i]);
 		}
 	}
 
@@ -111,33 +149,28 @@ void MultiRenderer::init(Instance& instance, uint32_t width, uint32_t height, bp
 	connect(window.resizeEvent, swapchain, &Swapchain::resize);
 
 	//Resize resources when the swapchain is resized
-	connect(swapchain.resizeEvent, [this](uint32_t w, uint32_t h){
-		if (strategy == Strategy::SORT_LAST) depthAttachment.resize(w, h);
-		compositionRenderPass.setRenderArea({{}, {w, h}});
-		float aspectRatio = static_cast<float>(w) / static_cast<float>(h);
-		camera.setPerspectiveProjection(glm::radians(60.f), aspectRatio, 0.01f, 1000.f);
-		auto renderAreas = calcululateSubRendererAreas(w, h);
-		for (auto i = 0; i < deviceCount; i++)
-		{
-			const auto& area = renderAreas[i];
-			subpasses[i].setClipTransform(
-				static_cast<float>(area.offset.x) / static_cast<float>(w),
-				static_cast<float>(area.offset.y) / static_cast<float>(h),
-				static_cast<float>(area.extent.width) / static_cast<float>(w),
-				static_cast<float>(area.extent.height) / static_cast<float>(h)
-			);
-			subRenderers[i].resize(area.extent.width, area.extent.height);
-			compositionSubpass.resizeTextureResources(i, area);
-		}
-	});
+	connect(swapchain.resizeEvent, *this, &MultiRenderer::resize);
 
 	//Initialize resources for compositing
-	compositionRenderPass.init(width, height);
-	compositionRenderPass.setRenderArea({{}, {width, height}});
+	compositingRenderPass.init(width, height);
+	compositingRenderPass.setRenderArea({{}, {width, height}});
 
 	cmdPool.init(devices[0].getGraphicsQueue());
-	compositionPassCompleteSem.init(devices[0]);
-	compositionCmdBuffer = cmdPool.allocateCommandBuffer();
+	frameCompleteSem.init(devices[0]);
+	compositingWaitEvent.init(devices[0]);
+	frameCmdBuffer = cmdPool.allocateCommandBuffer();
+
+	//Render the first frame
+	VkCommandBufferBeginInfo beginInfo = {};
+	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+	vkBeginCommandBuffer(frameCmdBuffer, &beginInfo);
+	recordRender();
+	vkEndCommandBuffer(frameCmdBuffer);
+
+	queue->submit({}, {frameCmdBuffer}, {});
+	queue->waitIdle();
 }
 
 void MultiRenderer::setColor(uint32_t deviceIndex, const glm::vec3& color)
@@ -149,36 +182,42 @@ void MultiRenderer::render()
 {
 	window.handleEvents();
 
-	vector<future<void>> futures;
-
-	//Render
-	for (auto& r : subRenderers)
-		futures.push_back(async(launch::async, [&r]{ r.render(); }));
-	for (auto& f : futures) f.wait();
-
-	//Copy to GPU responsible for compositing
-	futures.clear();
-	for (auto& r : subRenderers)
-		futures.push_back(async(launch::async, [&r]{ r.copyToTarget(); }));
-	for (auto& f : futures) f.wait();
-
-	//Compositing
 	VkCommandBufferBeginInfo beginInfo = {};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
-	vkBeginCommandBuffer(compositionCmdBuffer, &beginInfo);
-
-	for (auto& r : subRenderers) r.prepareComposition(compositionCmdBuffer);
-
-	compositionRenderPass.render(compositionCmdBuffer);
-	vkEndCommandBuffer(compositionCmdBuffer);
+	vkBeginCommandBuffer(frameCmdBuffer, &beginInfo);
+	recordCopy();
+	recordRender();
+	recordCompositing();
+	vkEndCommandBuffer(frameCmdBuffer);
 
 	queue->submit({{swapchain.getImageAvailableSemaphore(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT}},
-		      {compositionCmdBuffer}, {compositionPassCompleteSem});
+		      {frameCmdBuffer}, {frameCompleteSem});
+
+
+	vector<future<void>> futures;
+
+	//Copy previous frame while rendering next
+	for (int i = 1; i < deviceCount; i++)
+	{
+		auto& r = secondaryRenderers[i - 1];
+		r.resetCopyDoneEvent();
+		futures.push_back(async(launch::async, [&r, this, i]{
+			r.copy(mappedColorDst[i], strategy == Strategy::SORT_LAST
+						  ? mappedDepthDst[i] : nullptr);
+		}));
+		futures.push_back(async(launch::async, [&r]{ r.render(); }));
+	}
+	for (auto& f : futures) f.wait();
+
+	//Signal to main GPU that it can composite
+	vkSetEvent(devices[0], compositingWaitEvent);
+
+	//Wait until done compositing
 	queue->waitIdle();
 
-	swapchain.present(compositionPassCompleteSem);
+	swapchain.present(frameCompleteSem);
 }
 
 void MultiRenderer::update(float delta)
@@ -240,4 +279,87 @@ vector<pair<uint32_t, uint32_t>> MultiRenderer::calculateMeshPortions()
 		offset += elementCount;
 	}
 	return result;
+}
+
+void MultiRenderer::resize(uint32_t w, uint32_t h)
+{
+	if (strategy == Strategy::SORT_LAST) depthAttachment.resize(w, h);
+	compositingRenderPass.setRenderArea({{}, {w, h}});
+	float aspectRatio = static_cast<float>(w) / static_cast<float>(h);
+	camera.setPerspectiveProjection(glm::radians(60.f), aspectRatio, 0.01f, 1000.f);
+	auto renderAreas = calcululateSubRendererAreas(w, h);
+	for (auto i = 0; i < deviceCount; i++)
+	{
+		const auto& area = renderAreas[i];
+		subpasses[i].setClipTransform(
+			static_cast<float>(area.offset.x) / static_cast<float>(w),
+			static_cast<float>(area.offset.y) / static_cast<float>(h),
+			static_cast<float>(area.extent.width) / static_cast<float>(w),
+			static_cast<float>(area.extent.height) / static_cast<float>(h)
+		);
+		if (i > 0)
+		{
+			secondaryRenderers[i - 1].resize(area.extent.width,
+							 area.extent.height);
+		}
+		compositingColorSources[i].getImage().unmap(false);
+		compositingColorSources[i].resize(area.extent.width, area.extent.height);
+		mappedColorDst[i] =
+			compositingColorSources[i].getImage().map(0, VK_WHOLE_SIZE);
+		if (strategy == Strategy::SORT_LAST)
+		{
+			compositingDepthSources[i].getImage().unmap(false);
+			compositingDepthSources[i].resize(area.extent.width,
+							  area.extent.height);
+			mappedDepthDst[i] =
+				compositingDepthSources[i].getImage().map(0, VK_WHOLE_SIZE);
+		}
+		compositingSubpass.resizeTextureResources(i, area);
+	}
+}
+
+void MultiRenderer::recordCopy()
+{
+	compositingColorSources[0].getImage().transfer(renderColorAttachment.getImage(),
+						       frameCmdBuffer);
+	if (strategy == Strategy::SORT_LAST)
+	{
+		compositingDepthSources[0].getImage().transfer(renderDepthAttachment.getImage(),
+							       frameCmdBuffer);
+	}
+}
+
+void MultiRenderer::recordRender()
+{
+	renderPass.render(frameCmdBuffer);
+}
+
+void MultiRenderer::recordCompositing()
+{
+	vkResetEvent(devices[0], compositingWaitEvent);
+	VkEvent event = compositingWaitEvent;
+	vkCmdWaitEvents(frameCmdBuffer, 1, &event, VK_PIPELINE_STAGE_HOST_BIT,
+			VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, nullptr, 0, nullptr, 0, nullptr);
+
+	compositingColorSources[0].transitionShaderReadable(frameCmdBuffer,
+							    VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+	if (strategy == Strategy::SORT_LAST)
+	{
+		compositingDepthSources[0].transitionShaderReadable(
+			frameCmdBuffer, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+	}
+	for (auto i = 1; i < deviceCount; i++)
+	{
+		compositingColorSources[i].getImage().flushStagingBuffer(frameCmdBuffer);
+		compositingColorSources[i].transitionShaderReadable(
+			frameCmdBuffer, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+		if (strategy == Strategy::SORT_LAST)
+		{
+			compositingDepthSources[i].getImage().flushStagingBuffer(frameCmdBuffer);
+			compositingDepthSources[i].transitionShaderReadable(
+				frameCmdBuffer, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+		}
+	}
+
+	compositingRenderPass.render(frameCmdBuffer);
 }

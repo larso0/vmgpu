@@ -22,7 +22,7 @@ public:
 	void present();
 
 private:
-	bp::Window window;
+	bpView::Window window;
 	bp::Device device;
 	bp::Swapchain swapchain;
 	bp::Texture depthAttachment;

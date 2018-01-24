@@ -1,18 +1,19 @@
-#include "CompositionSubpass.h"
+#include "CompositingSubpass.h"
 #include <bp/RenderPass.h>
 #include <bp/Util.h>
+#include <stdexcept>
 
 using namespace bp;
 using namespace std;
 
-CompositionSubpass::~CompositionSubpass()
+CompositingSubpass::~CompositingSubpass()
 {
 	if (sampler != VK_NULL_HANDLE) vkDestroySampler(*device, sampler, nullptr);
 }
 
-void CompositionSubpass::init(RenderPass& renderPass)
+void CompositingSubpass::init(RenderPass& renderPass)
 {
-	CompositionSubpass::renderPass = &renderPass;
+	CompositingSubpass::renderPass = &renderPass;
 
 	initShaders();
 	initDescriptorSetLayout();
@@ -23,7 +24,7 @@ void CompositionSubpass::init(RenderPass& renderPass)
 	initialized = true;
 }
 
-void CompositionSubpass::render(VkCommandBuffer cmdBuffer)
+void CompositingSubpass::render(VkCommandBuffer cmdBuffer)
 {
 	vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
 
@@ -55,7 +56,7 @@ void CompositionSubpass::render(VkCommandBuffer cmdBuffer)
 	}
 }
 
-unsigned CompositionSubpass::addTexture(const VkRect2D& area, bp::Texture& texture)
+unsigned CompositingSubpass::addTexture(const VkRect2D& area, bp::Texture& texture)
 {
 	if (initialized) throw runtime_error("Texture must be added before initialization.");
 	if (depthTestEnabled)
@@ -65,7 +66,7 @@ unsigned CompositionSubpass::addTexture(const VkRect2D& area, bp::Texture& textu
 	return textureCount++;
 }
 
-unsigned CompositionSubpass::addTexture(const VkRect2D& area, Texture& texture,
+unsigned CompositingSubpass::addTexture(const VkRect2D& area, Texture& texture,
 					Texture& depthTexture)
 {
 	if (initialized) throw runtime_error("Texture must be added before initialization.");
@@ -75,7 +76,7 @@ unsigned CompositionSubpass::addTexture(const VkRect2D& area, Texture& texture,
 	return textureCount++;
 }
 
-void CompositionSubpass::resizeTextureResources(unsigned index, const VkRect2D& newArea)
+void CompositingSubpass::resizeTextureResources(unsigned index, const VkRect2D& newArea)
 {
 	areas[index] = newArea;
 	if (initialized)
@@ -96,7 +97,7 @@ void CompositionSubpass::resizeTextureResources(unsigned index, const VkRect2D& 
 	}
 }
 
-void CompositionSubpass::initShaders()
+void CompositingSubpass::initShaders()
 {
 	auto vertexShaderCode = readBinaryFile("spv/compositeQuad.vert.spv");
 	vertexShader.init(*device, VK_SHADER_STAGE_VERTEX_BIT,
@@ -113,7 +114,7 @@ void CompositionSubpass::initShaders()
 			    reinterpret_cast<const uint32_t*>(fragmentShaderCode.data()));
 }
 
-void CompositionSubpass::initDescriptorSetLayout()
+void CompositingSubpass::initDescriptorSetLayout()
 {
 	descriptorSetLayout.addLayoutBinding({0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
 					      1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr});
@@ -125,14 +126,14 @@ void CompositionSubpass::initDescriptorSetLayout()
 	descriptorSetLayout.init(*device);
 }
 
-void CompositionSubpass::initPipelineLayout()
+void CompositingSubpass::initPipelineLayout()
 {
 	pipelineLayout.addDescriptorSetLayout(descriptorSetLayout);
 	pipelineLayout.addPushConstantRange({VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PushConstant)});
 	pipelineLayout.init(*device);
 }
 
-void CompositionSubpass::initPipeline()
+void CompositingSubpass::initPipeline()
 {
 	pipeline.addShaderStageInfo(vertexShader.getPipelineShaderStageInfo());
 	pipeline.addShaderStageInfo(fragmentShader.getPipelineShaderStageInfo());
@@ -141,7 +142,7 @@ void CompositionSubpass::initPipeline()
 	pipeline.init(*device, *renderPass, pipelineLayout);
 }
 
-void CompositionSubpass::initSampler()
+void CompositingSubpass::initSampler()
 {
 	VkSamplerCreateInfo samplerInfo = {};
 	samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -166,7 +167,7 @@ void CompositionSubpass::initSampler()
 		throw runtime_error("Failed to create sampler.");
 }
 
-void CompositionSubpass::initDescriptors()
+void CompositingSubpass::initDescriptors()
 {
 	descriptorPool.init(*device,
 			    {{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, textureCount * 2}},

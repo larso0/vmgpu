@@ -2,9 +2,9 @@
 #define VMGPU_SORTLASTRENDERER_H
 
 #include "Renderer.h"
-#include "subpasses/CompositionSubpass.h"
+#include "subpasses/CompositingSubpass.h"
 #include "subpasses/MeshSubpass.h"
-#include "SubRenderer.h"
+#include "SecondaryRenderer.h"
 #include <bpView/Window.h>
 #include <bp/Device.h>
 #include <bp/Swapchain.h>
@@ -12,13 +12,14 @@
 #include <bp/RenderPass.h>
 #include <bp/CommandPool.h>
 #include <bp/Semaphore.h>
+#include <bp/Event.h>
 #include <vector>
 #include <utility>
 
 class MultiRenderer : public Renderer
 {
 public:
-	using Strategy = SubRenderer::Strategy;
+	using Strategy = SecondaryRenderer::Strategy;
 
 	MultiRenderer() :
 		strategy{Strategy::SORT_LAST},
@@ -28,7 +29,7 @@ public:
 		cameraNode{&sceneRoot},
 		camera{&cameraNode},
 		deviceCount{2},
-		compositionCmdBuffer{VK_NULL_HANDLE},
+		frameCmdBuffer{VK_NULL_HANDLE},
 		queue{nullptr} {}
 
 	void setStrategy(Strategy strategy) { MultiRenderer::strategy = strategy; }
@@ -49,25 +50,39 @@ private:
 	bpScene::Node sceneRoot, meshNode, cameraNode;
 	bpScene::Camera camera;
 
-	bp::Window window;
-
 	uint32_t deviceCount;
 	std::vector<bp::Device> devices;
-	std::vector<SubRenderer> subRenderers;
+	std::vector<SecondaryRenderer> secondaryRenderers;
 	std::vector<MeshSubpass> subpasses;
 
+	bp::Texture renderColorAttachment;
+	bp::Texture renderDepthAttachment;
+	bp::RenderPass renderPass;
+
+	std::vector<bp::Texture> compositingColorSources;
+	std::vector<void*> mappedColorDst;
+	std::vector<bp::Texture> compositingDepthSources;
+	std::vector<void*> mappedDepthDst;
+
+	bpView::Window window;
 	bp::Swapchain swapchain;
 	bp::Texture depthAttachment;
-	CompositionSubpass compositionSubpass;
-	bp::RenderPass compositionRenderPass;
+	CompositingSubpass compositingSubpass;
+	bp::RenderPass compositingRenderPass;
+
 	bp::CommandPool cmdPool;
-	bp::Semaphore compositionPassCompleteSem;
-	VkCommandBuffer compositionCmdBuffer;
+	bp::Semaphore frameCompleteSem;
+	bp::Event compositingWaitEvent;
+	VkCommandBuffer frameCmdBuffer;
 	bp::Queue* queue;
 
 	bool isDeviceChosen(VkPhysicalDevice device);
 	std::vector<VkRect2D> calcululateSubRendererAreas(uint32_t width, uint32_t height);
 	std::vector<std::pair<uint32_t, uint32_t>> calculateMeshPortions();
+	void resize(uint32_t w, uint32_t h);
+	void recordCopy();
+	void recordRender();
+	void recordCompositing();
 };
 
 

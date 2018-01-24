@@ -1,5 +1,5 @@
-#ifndef VMGPU_COMPOSITIONSUBPASS_H
-#define VMGPU_COMPOSITIONSUBPASS_H
+#ifndef VMGPU_COMPOSITINGSUBPASS_H
+#define VMGPU_COMPOSITINGSUBPASS_H
 
 #include <bp/Subpass.h>
 #include <bp/Texture.h>
@@ -11,16 +11,16 @@
 #include <bp/ImageDescriptor.h>
 #include <vector>
 
-class CompositionSubpass : public bp::Subpass
+class CompositingSubpass : public bp::Subpass
 {
 public:
-	CompositionSubpass() :
+	CompositingSubpass() :
 		renderPass{nullptr},
 		initialized{false},
 		depthTestEnabled{false},
 		sampler{VK_NULL_HANDLE},
 		textureCount{0} {}
-	~CompositionSubpass();
+	~CompositingSubpass();
 
 	void setDepthTestEnabled(bool enabled) { depthTestEnabled = enabled; }
 	void init(bp::RenderPass& renderPass) override;

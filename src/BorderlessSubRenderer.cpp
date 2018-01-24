@@ -1,6 +1,8 @@
 #include "BorderlessSubRenderer.h"
 
 using namespace bp;
+using namespace bpUtil;
+using namespace bpView;
 
 void BorderlessSubRenderer::init(VkInstance instance, VkPhysicalDevice physicalDevice,
 				 Subpass& subpass, const VkRect2D& area)
@@ -8,9 +10,8 @@ void BorderlessSubRenderer::init(VkInstance instance, VkPhysicalDevice physicalD
 	BorderlessSubRenderer::subpass = &subpass;
 
 	window.init(instance, area.extent.width, area.extent.height, "subrenderer", nullptr,
-		    FlagSet<Window::Flags>() << Window::Flags::FLOATING
-					     << Window::Flags::VISIBLE
-					     << Window::Flags::AUTO_ICONIFY);
+		    Window::Flags() << Window::Flag::FLOATING << Window::Flag::VISIBLE
+				    << Window::Flag::AUTO_ICONIFY);
 	window.setPosition(area.offset.x, area.offset.y);
 
 	DeviceRequirements requirements;

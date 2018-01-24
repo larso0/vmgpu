@@ -36,7 +36,7 @@ private:
 	bpScene::Node sceneRoot, meshNode, cameraNode;
 	bpScene::Camera camera;
 
-	bp::Window window;
+	bpView::Window window;
 	bp::Device device;
 	bp::Swapchain swapchain;
 	bp::Texture depthAttachment;

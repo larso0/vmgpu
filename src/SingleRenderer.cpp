@@ -1,6 +1,7 @@
 #include "SingleRenderer.h"
 
 using namespace bp;
+using namespace bpUtil;
 using namespace bpScene;
 
 void SingleRenderer::init(Instance& instance, uint32_t width, uint32_t height,
