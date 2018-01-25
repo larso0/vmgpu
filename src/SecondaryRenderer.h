@@ -20,7 +20,7 @@ public:
 		strategy{Strategy::SORT_LAST},
 		renderDevice{nullptr},
 		subpass{nullptr},
-		renderCmdBuffer{VK_NULL_HANDLE},
+		cmdBuffer{VK_NULL_HANDLE},
 		queue{nullptr},
 		colorSrc{nullptr},
 		depthSrc{nullptr} {}
@@ -31,7 +31,7 @@ public:
 	void resize(uint32_t width, uint32_t height);
 	void render();
 	void copy(void* colorDst, void* depthDst = nullptr);
-	void resetCopyDoneEvent();
+	void prepareNextFrame();
 
 private:
 	Strategy strategy;
@@ -41,8 +41,7 @@ private:
 	bp::RenderPass renderPass;
 	bp::Subpass* subpass;
 	bp::CommandPool cmdPool;
-	bp::Event copyDoneEvent;
-	VkCommandBuffer renderCmdBuffer;
+	VkCommandBuffer cmdBuffer;
 	bp::Queue* queue;
 	void* colorSrc;
 	void* depthSrc;

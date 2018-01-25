@@ -42,9 +42,7 @@ void SecondaryRenderer::init(Strategy strategy, Device& renderDevice, uint32_t w
 
 	cmdPool.init(renderDevice.getGraphicsQueue());
 
-	copyDoneEvent.init(renderDevice);
-
-	renderCmdBuffer = cmdPool.allocateCommandBuffer();
+	cmdBuffer = cmdPool.allocateCommandBuffer();
 	queue = &renderDevice.getGraphicsQueue();
 
 	colorSrc = colorAttachment.getImage().map(0, VK_WHOLE_SIZE);
@@ -56,13 +54,13 @@ void SecondaryRenderer::init(Strategy strategy, Device& renderDevice, uint32_t w
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
-	vkBeginCommandBuffer(renderCmdBuffer, &beginInfo);
-	renderPass.render(renderCmdBuffer);
-	colorAttachment.getImage().updateStagingBuffer(renderCmdBuffer);
-	depthAttachment.getImage().updateStagingBuffer(renderCmdBuffer);
-	vkEndCommandBuffer(renderCmdBuffer);
+	vkBeginCommandBuffer(cmdBuffer, &beginInfo);
+	renderPass.render(cmdBuffer);
+	colorAttachment.getImage().updateStagingBuffer(cmdBuffer);
+	depthAttachment.getImage().updateStagingBuffer(cmdBuffer);
+	vkEndCommandBuffer(cmdBuffer);
 
-	queue->submit({}, {renderCmdBuffer}, {});
+	queue->submit({}, {cmdBuffer}, {});
 	queue->waitIdle();
 }
 
@@ -87,19 +85,11 @@ void SecondaryRenderer::render()
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
-	vkBeginCommandBuffer(renderCmdBuffer, &beginInfo);
-	renderPass.render(renderCmdBuffer);
+	vkBeginCommandBuffer(cmdBuffer, &beginInfo);
+	renderPass.render(cmdBuffer);
+	vkEndCommandBuffer(cmdBuffer);
 
-	VkEvent event = copyDoneEvent;
-	vkCmdWaitEvents(renderCmdBuffer, 1, &event, VK_PIPELINE_STAGE_HOST_BIT,
-			VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, nullptr, 0, nullptr, 0, nullptr);
-
-	colorAttachment.getImage().updateStagingBuffer(renderCmdBuffer);
-	depthAttachment.getImage().updateStagingBuffer(renderCmdBuffer);
-
-	vkEndCommandBuffer(renderCmdBuffer);
-
-	queue->submit({}, {renderCmdBuffer}, {});
+	queue->submit({}, {cmdBuffer}, {});
 	queue->waitIdle();
 }
 
@@ -117,11 +107,19 @@ void SecondaryRenderer::copy(void* colorDst, void* depthDst)
 	}
 
 	colorCopyFuture.wait();
-
-	vkSetEvent(*renderDevice, copyDoneEvent);
 }
 
-void SecondaryRenderer::resetCopyDoneEvent()
+void SecondaryRenderer::prepareNextFrame()
 {
-	vkResetEvent(*renderDevice, copyDoneEvent);
+	VkCommandBufferBeginInfo beginInfo = {};
+	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+	vkBeginCommandBuffer(cmdBuffer, &beginInfo);
+	colorAttachment.getImage().updateStagingBuffer(cmdBuffer);
+	depthAttachment.getImage().updateStagingBuffer(cmdBuffer);
+	vkEndCommandBuffer(cmdBuffer);
+
+	queue->submit({}, {cmdBuffer}, {});
+	queue->waitIdle();
 }

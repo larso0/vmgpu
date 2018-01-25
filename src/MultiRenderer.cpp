@@ -82,9 +82,13 @@ void MultiRenderer::init(Instance& instance, uint32_t width, uint32_t height, bp
 	const auto& area = renderAreas[0];
 
 	//Setup resources for the first GPU
+	renderColorAttachment.setClearEnabled(true);
+	renderColorAttachment.setClearValue({0.2f, 0.2f, 0.2f, 1.f});
 	renderColorAttachment.init(devices[0], VK_FORMAT_R8G8B8A8_UNORM,
 				   VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
 				   area.extent.width, area.extent.height);
+	renderDepthAttachment.setClearEnabled(true);
+	renderDepthAttachment.setClearValue({1.f, 0.f});
 	renderDepthAttachment.init(devices[0], VK_FORMAT_D16_UNORM,
 				   VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
 				   area.extent.width, area.extent.height);
@@ -157,7 +161,6 @@ void MultiRenderer::init(Instance& instance, uint32_t width, uint32_t height, bp
 
 	cmdPool.init(devices[0].getGraphicsQueue());
 	frameCompleteSem.init(devices[0]);
-	compositingWaitEvent.init(devices[0]);
 	frameCmdBuffer = cmdPool.allocateCommandBuffer();
 
 	//Render the first frame
@@ -182,41 +185,51 @@ void MultiRenderer::render()
 {
 	window.handleEvents();
 
+	//Copy previous frame while rendering next
 	VkCommandBufferBeginInfo beginInfo = {};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
 	vkBeginCommandBuffer(frameCmdBuffer, &beginInfo);
-	recordCopy();
-	recordRender();
-	recordCompositing();
+	if (resized)
+	{
+		recordRender();
+		recordCopy();
+		resized = false;
+	} else
+	{
+		recordCopy();
+		recordRender();
+	}
 	vkEndCommandBuffer(frameCmdBuffer);
 
-	queue->submit({{swapchain.getImageAvailableSemaphore(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT}},
-		      {frameCmdBuffer}, {frameCompleteSem});
+	queue->submit({}, {frameCmdBuffer}, {});
 
 
 	vector<future<void>> futures;
 
-	//Copy previous frame while rendering next
 	for (int i = 1; i < deviceCount; i++)
 	{
 		auto& r = secondaryRenderers[i - 1];
-		r.resetCopyDoneEvent();
 		futures.push_back(async(launch::async, [&r, this, i]{
+			auto renderFut = async(launch::async, [&r]{ r.render(); });
 			r.copy(mappedColorDst[i], strategy == Strategy::SORT_LAST
 						  ? mappedDepthDst[i] : nullptr);
+			renderFut.wait();
+			r.prepareNextFrame();
 		}));
-		futures.push_back(async(launch::async, [&r]{ r.render(); }));
 	}
 	for (auto& f : futures) f.wait();
-
-	//Signal to main GPU that it can composite
-	vkSetEvent(devices[0], compositingWaitEvent);
-
-	//Wait until done compositing
 	queue->waitIdle();
 
+	vkBeginCommandBuffer(frameCmdBuffer, &beginInfo);
+	recordCompositing();
+	vkEndCommandBuffer(frameCmdBuffer);
+
+	queue->submit({{swapchain.getImageAvailableSemaphore(),
+			       VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT}},
+		      {frameCmdBuffer}, {frameCompleteSem});
+	queue->waitIdle();
 	swapchain.present(frameCompleteSem);
 }
 
@@ -250,7 +263,8 @@ vector<VkRect2D> MultiRenderer::calcululateSubRendererAreas(uint32_t width, uint
 	uint32_t sliceHeight = height / deviceCount;
 	vector<VkRect2D> result;
 	for (uint32_t i = 0; i < deviceCount; i++)
-		result.push_back({{0, i * sliceHeight}, {width, sliceHeight}});
+		result.push_back({{0, static_cast<int32_t>(i * sliceHeight)},
+				  {width, sliceHeight}});
 	result[deviceCount - 1].extent.height += height - sliceHeight * deviceCount;
 	return result;
 }
@@ -287,7 +301,15 @@ void MultiRenderer::resize(uint32_t w, uint32_t h)
 	compositingRenderPass.setRenderArea({{}, {w, h}});
 	float aspectRatio = static_cast<float>(w) / static_cast<float>(h);
 	camera.setPerspectiveProjection(glm::radians(60.f), aspectRatio, 0.01f, 1000.f);
+
 	auto renderAreas = calcululateSubRendererAreas(w, h);
+	renderColorAttachment.resize(renderAreas[0].extent.width, renderAreas[0].extent.height);
+	renderDepthAttachment.resize(renderAreas[0].extent.width, renderAreas[0].extent.height);
+	renderPass.resize(renderAreas[0].extent.width, renderAreas[0].extent.height);
+	renderPass.setRenderArea({{}, renderAreas[0].extent});
+
+	resized = true;
+
 	for (auto i = 0; i < deviceCount; i++)
 	{
 		const auto& area = renderAreas[i];
@@ -336,11 +358,6 @@ void MultiRenderer::recordRender()
 
 void MultiRenderer::recordCompositing()
 {
-	vkResetEvent(devices[0], compositingWaitEvent);
-	VkEvent event = compositingWaitEvent;
-	vkCmdWaitEvents(frameCmdBuffer, 1, &event, VK_PIPELINE_STAGE_HOST_BIT,
-			VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, nullptr, 0, nullptr, 0, nullptr);
-
 	compositingColorSources[0].transitionShaderReadable(frameCmdBuffer,
 							    VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
 	if (strategy == Strategy::SORT_LAST)
