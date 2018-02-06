@@ -100,17 +100,15 @@ void MeshSubpass::initPipeline()
 
 void MeshSubpass::initBuffers()
 {
-	vertexBuffer.init(*device, mesh->getVertexDataSize(),
-			  VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-			  VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+	vertexBuffer.init(*device, mesh->getVertexDataSize(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+			  VMA_MEMORY_USAGE_GPU_ONLY);
 	vertexBuffer.transfer(0, VK_WHOLE_SIZE, mesh->getVertexDataPtr());
 
-	indexBuffer.init(*device, mesh->getIndexDataSize(),
-			 VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-			 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+	indexBuffer.init(*device, mesh->getIndexDataSize(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+			 VMA_MEMORY_USAGE_GPU_ONLY);
 	indexBuffer.transfer(0, VK_WHOLE_SIZE, mesh->getIndexDataPtr());
 	uniformBuffer.init(*device, sizeof(glm::vec3), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-			   VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+			   VMA_MEMORY_USAGE_GPU_ONLY);
 	uniformBuffer.transfer(0, sizeof(glm::vec3), &color);
 }
 

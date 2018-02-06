@@ -24,7 +24,6 @@ public:
 		queue{nullptr},
 		colorSrc{nullptr},
 		depthSrc{nullptr} {}
-	~SecondaryRenderer();
 
 	void init(Strategy strategy, bp::Device& renderDevice, uint32_t width, uint32_t height,
 		  bp::Subpass& subpass);

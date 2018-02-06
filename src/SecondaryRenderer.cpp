@@ -7,16 +7,6 @@
 using namespace bp;
 using namespace std;
 
-SecondaryRenderer::~SecondaryRenderer()
-{
-	if (renderDevice != nullptr)
-	{
-		colorAttachment.getImage().unmap(false);
-		if (strategy == Strategy::SORT_LAST)
-			depthAttachment.getImage().unmap(false);
-	}
-}
-
 void SecondaryRenderer::init(Strategy strategy, Device& renderDevice, uint32_t width,
 			     uint32_t height, Subpass& subpass)
 {
@@ -45,9 +35,9 @@ void SecondaryRenderer::init(Strategy strategy, Device& renderDevice, uint32_t w
 	cmdBuffer = cmdPool.allocateCommandBuffer();
 	queue = &renderDevice.getGraphicsQueue();
 
-	colorSrc = colorAttachment.getImage().map(0, VK_WHOLE_SIZE);
+	colorSrc = colorAttachment.getImage().map();
 	if (strategy == Strategy::SORT_LAST)
-		depthSrc = depthAttachment.getImage().map(0, VK_WHOLE_SIZE);
+		depthSrc = depthAttachment.getImage().map();
 
 	//Render the first frame
 	VkCommandBufferBeginInfo beginInfo = {};
@@ -66,14 +56,11 @@ void SecondaryRenderer::init(Strategy strategy, Device& renderDevice, uint32_t w
 
 void SecondaryRenderer::resize(uint32_t width, uint32_t height)
 {
-	colorAttachment.getImage().unmap(false);
-	if (strategy == Strategy::SORT_LAST)
-		depthAttachment.getImage().unmap(false);
 	colorAttachment.resize(width, height);
 	depthAttachment.resize(width, height);
-	colorSrc = colorAttachment.getImage().map(0, VK_WHOLE_SIZE);
+	colorSrc = colorAttachment.getImage().map();
 	if (strategy == Strategy::SORT_LAST)
-		depthSrc = depthAttachment.getImage().map(0, VK_WHOLE_SIZE);
+		depthSrc = depthAttachment.getImage().map();
 
 	renderPass.resize(width, height);
 	renderPass.setRenderArea({{}, {width, height}});

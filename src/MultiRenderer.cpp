@@ -134,13 +134,13 @@ void MultiRenderer::init(Instance& instance, uint32_t width, uint32_t height, bp
 		compositingColorSources.emplace_back(devices[0], VK_FORMAT_R8G8B8A8_UNORM,
 						     VK_IMAGE_USAGE_SAMPLED_BIT, w, h);
 		mappedColorDst.push_back(
-			compositingColorSources[i].getImage().map(0, VK_WHOLE_SIZE));
+			compositingColorSources[i].getImage().map());
 		if (strategy == Strategy::SORT_LAST)
 		{
 			compositingDepthSources.emplace_back(devices[0], VK_FORMAT_D16_UNORM,
 							     VK_IMAGE_USAGE_SAMPLED_BIT, w, h);
 			mappedDepthDst.push_back(
-				compositingDepthSources[i].getImage().map(0, VK_WHOLE_SIZE));
+				compositingDepthSources[i].getImage().map());
 			compositingSubpass.addTexture(renderAreas[i], compositingColorSources[i],
 						      compositingDepthSources[i]);
 		} else
@@ -324,17 +324,15 @@ void MultiRenderer::resize(uint32_t w, uint32_t h)
 			secondaryRenderers[i - 1].resize(area.extent.width,
 							 area.extent.height);
 		}
-		compositingColorSources[i].getImage().unmap(false);
 		compositingColorSources[i].resize(area.extent.width, area.extent.height);
 		mappedColorDst[i] =
-			compositingColorSources[i].getImage().map(0, VK_WHOLE_SIZE);
+			compositingColorSources[i].getImage().map();
 		if (strategy == Strategy::SORT_LAST)
 		{
-			compositingDepthSources[i].getImage().unmap(false);
 			compositingDepthSources[i].resize(area.extent.width,
 							  area.extent.height);
 			mappedDepthDst[i] =
-				compositingDepthSources[i].getImage().map(0, VK_WHOLE_SIZE);
+				compositingDepthSources[i].getImage().map();
 		}
 		compositingSubpass.resizeTextureResources(i, area);
 	}
