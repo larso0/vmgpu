@@ -61,9 +61,7 @@ private:
 	bp::RenderPass renderPass;
 
 	std::vector<bp::Texture> compositingColorSources;
-	std::vector<void*> mappedColorDst;
 	std::vector<bp::Texture> compositingDepthSources;
-	std::vector<void*> mappedDepthDst;
 
 	bpView::Window window;
 	bp::Swapchain swapchain;
