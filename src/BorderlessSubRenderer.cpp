@@ -10,8 +10,7 @@ void BorderlessSubRenderer::init(VkInstance instance, VkPhysicalDevice physicalD
 	BorderlessSubRenderer::subpass = &subpass;
 
 	window.init(instance, area.extent.width, area.extent.height, "subrenderer", nullptr,
-		    Window::Flags() << Window::Flag::FLOATING << Window::Flag::VISIBLE
-				    << Window::Flag::AUTO_ICONIFY);
+		    Window::Flags() << Window::FLOATING << Window::VISIBLE << Window::AUTO_ICONIFY);
 	window.setPosition(area.offset.x, area.offset.y);
 
 	DeviceRequirements requirements;

@@ -23,8 +23,7 @@ int main(int argc, char** argv)
 
 	Mesh mesh;
 	cout << "Loading '" << options.objPath << "'" << endl;
-	mesh.loadObj(options.objPath, Mesh::LoadFlags() << Mesh::LoadFlag::POSITION
-							<< Mesh::LoadFlag::NORMAL);
+	mesh.loadObj(options.objPath, Mesh::LoadFlags() << Mesh::POSITION << Mesh::NORMAL);
 	cout << "Initializing renderer" << endl;
 
 	bpView::init();
