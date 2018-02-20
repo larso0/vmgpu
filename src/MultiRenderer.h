@@ -15,6 +15,8 @@
 #include <bp/Event.h>
 #include <vector>
 #include <utility>
+#include <unordered_map>
+#include <mutex>
 
 class MultiRenderer : public Renderer
 {
@@ -43,6 +45,8 @@ public:
 
 	bool shouldClose() override;
 	uint32_t getDeviceCount() const { return deviceCount; }
+
+	void printMeasurements();
 
 private:
 	Strategy strategy;
@@ -82,6 +86,11 @@ private:
 	void recordCopy();
 	void recordRender();
 	void recordCompositing();
+
+	//Time measure
+	std::mutex measureMut;
+	std::unordered_map<std::string, double> measureAccumulators;
+	unsigned measureFrameCount{0};
 };
 
 

@@ -109,7 +109,18 @@ int main(int argc, char** argv)
 			double diff = time - frametimeAccumulator;
 			frametimeAccumulator = time;
 			double fps = 50.0 / diff;
-			cout << '\r' << setprecision(4) << fps << " FPS" << flush;
+
+			cout << "\rAverage measurements: fps = " << setprecision(4) << fps
+			     << ", tpf = " << setprecision(4) << diff / 50.0;
+
+			if (options.strategy == Strategy::SortFirst
+			    || options.strategy == Strategy::SortLast)
+			{
+				cout << ", ";
+				static_cast<MultiRenderer*>(renderer)->printMeasurements();
+			}
+
+			cout << flush;
 		}
 
 		renderer->update(delta);

@@ -1,6 +1,8 @@
 #include "MultiRenderer.h"
 #include <algorithm>
 #include <future>
+#include <iostream>
+#include <iomanip>
 
 using namespace bp;
 using namespace bpUtil;
@@ -188,6 +190,7 @@ void MultiRenderer::render()
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
+	double t0 = glfwGetTime();
 	vkBeginCommandBuffer(frameCmdBuffer, &beginInfo);
 	if (resized)
 	{
@@ -201,26 +204,50 @@ void MultiRenderer::render()
 	}
 	vkEndCommandBuffer(frameCmdBuffer);
 
-	queue->submit({}, {frameCmdBuffer}, {});
-
-
 	vector<future<void>> futures;
+
+	futures.push_back(async(launch::async, [this, t0]{
+		queue->submit({}, {frameCmdBuffer}, {});
+		queue->waitIdle();
+		double t1 = glfwGetTime();
+		measureAccumulators["renderAndCopy0"] += t1 - t0;
+	}));
 
 	for (int i = 1; i < deviceCount; i++)
 	{
 		auto& r = secondaryRenderers[i - 1];
 		futures.push_back(async(launch::async, [&r, this, i]{
-			auto renderFut = async(launch::async, [&r]{ r.render(); });
+			auto renderFut = async(launch::async, [&r, this, i]{
+				double t0 = glfwGetTime();
+				r.render();
+				double t1 = glfwGetTime();
+				{
+					unique_lock<mutex> lock(measureMut);
+					measureAccumulators["render" + to_string(i)] += t1 - t0;
+				}
+			});
+
+			double t0 = glfwGetTime();
 			r.copy(compositingColorSources[i].getImage().map(),
 			       strategy == Strategy::SORT_LAST
 			       ? compositingDepthSources[i].getImage().map() : nullptr);
+			double t1 = glfwGetTime();
 			renderFut.wait();
+
+			double t2 = glfwGetTime();
 			r.prepareNextFrame();
+			double t3 = glfwGetTime();
+
+			{
+				unique_lock<mutex> lock(measureMut);
+				measureAccumulators["copy" + to_string(i)] += t1 - t0;
+				measureAccumulators["stage" + to_string(i)] += t3 - t2;
+			}
 		}));
 	}
 	for (auto& f : futures) f.wait();
-	queue->waitIdle();
 
+	t0 = glfwGetTime();
 	vkBeginCommandBuffer(frameCmdBuffer, &beginInfo);
 	recordCompositing();
 	vkEndCommandBuffer(frameCmdBuffer);
@@ -230,6 +257,11 @@ void MultiRenderer::render()
 		      {frameCmdBuffer}, {frameCompleteSem});
 	queue->waitIdle();
 	swapchain.present(frameCompleteSem);
+	double t1 = glfwGetTime();
+
+	measureAccumulators["composite"] += t1 - t0;
+
+	measureFrameCount++;
 }
 
 void MultiRenderer::update(float delta)
@@ -241,6 +273,22 @@ void MultiRenderer::update(float delta)
 bool MultiRenderer::shouldClose()
 {
 	return static_cast<bool>(glfwWindowShouldClose(window.getHandle()));
+}
+
+void MultiRenderer::printMeasurements()
+{
+	if (measureFrameCount > 1)
+	{
+		for (auto a : measureAccumulators)
+			measureAccumulators[a.first] = a.second / measureFrameCount;
+		measureFrameCount = 0;
+	}
+
+	auto iter = measureAccumulators.begin();
+	cout << iter->first << " = " << setprecision(4) << iter->second;
+	iter++;
+	for (; iter != measureAccumulators.end(); iter++)
+		cout  << ", " << iter->first << " = " << setprecision(4) << iter->second;
 }
 
 bool MultiRenderer::isDeviceChosen(VkPhysicalDevice device)
