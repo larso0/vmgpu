@@ -204,45 +204,46 @@ void MultiRenderer::render()
 	}
 	vkEndCommandBuffer(frameCmdBuffer);
 
-	vector<future<void>> futures;
+	vector<future<void>> renderFutures;
+	vector<future<void>> copyFutures;
 
-	futures.push_back(async(launch::async, [this, t0]{
+	auto primaryRenderFuture = async(launch::async, [this, t0]{
 		queue->submit({}, {frameCmdBuffer}, {});
 		queue->waitIdle();
 		double t1 = glfwGetTime();
 		unique_lock<mutex> lock(measureMut);
 		measureAccumulators["renderAndCopy0"] += t1 - t0;
-	}));
+	});
 
 	for (int i = 1; i < deviceCount; i++)
 	{
 		auto& r = secondaryRenderers[i - 1];
-		futures.push_back(async(launch::async, [&r, this, i]{
-			r.selectStagingBuffers();
-			auto renderFut = async(launch::async, [&r, this, i]{
-				double t0 = glfwGetTime();
-				r.render();
-				double t1 = glfwGetTime();
-				{
-					unique_lock<mutex> lock(measureMut);
-					measureAccumulators["render" + to_string(i)] += t1 - t0;
-				}
-			});
+		r.selectStagingBuffers();
 
+		renderFutures.push_back(async(launch::async, [&r, this, i]{
+			double t0 = glfwGetTime();
+			r.render();
+			double t1 = glfwGetTime();
+			{
+				unique_lock<mutex> lock(measureMut);
+				measureAccumulators["render" + to_string(i)] += t1 - t0;
+			}
+		}));
+
+		copyFutures.push_back(async(launch::async, [&r, this, i]{
 			double t0 = glfwGetTime();
 			r.copy(compositingColorSources[i].getImage().map(),
 			       strategy == Strategy::SORT_LAST
 			       ? compositingDepthSources[i].getImage().map() : nullptr);
 			double t1 = glfwGetTime();
-			renderFut.wait();
-
 			{
 				unique_lock<mutex> lock(measureMut);
 				measureAccumulators["copy" + to_string(i)] += t1 - t0;
 			}
 		}));
 	}
-	for (auto& f : futures) f.wait();
+	for (auto& f : copyFutures) f.wait();
+	primaryRenderFuture.wait();
 
 	t0 = glfwGetTime();
 	vkBeginCommandBuffer(frameCmdBuffer, &beginInfo);
@@ -259,6 +260,8 @@ void MultiRenderer::render()
 	measureAccumulators["composite"] += t1 - t0;
 
 	measureFrameCount++;
+
+	for (auto& f : renderFutures) f.wait();
 }
 
 void MultiRenderer::update(float delta)
