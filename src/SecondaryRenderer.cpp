@@ -69,7 +69,7 @@ void SecondaryRenderer::resize(uint32_t width, uint32_t height)
 
 	for (unsigned i = 0; i < 2; i++)
 	{
-		delete depthStagingBuffers[i];
+		delete colorStagingBuffers[i];
 		colorStagingBuffers[i] =
 			new Buffer(*renderDevice, colorAttachment.getImage().getMemorySize(),
 				   VK_BUFFER_USAGE_TRANSFER_DST_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
