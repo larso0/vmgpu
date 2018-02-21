@@ -6,6 +6,8 @@
 #include <bp/RenderPass.h>
 #include <bp/CommandPool.h>
 #include <bp/Event.h>
+#include <bp/Buffer.h>
+#include <array>
 
 class SecondaryRenderer
 {
@@ -22,28 +24,29 @@ public:
 		subpass{nullptr},
 		cmdBuffer{VK_NULL_HANDLE},
 		queue{nullptr},
-		colorSrc{nullptr},
-		depthSrc{nullptr} {}
+		currentStagingBufferIndex{0}, previousStagingBufferIndex{1} {}
+	~SecondaryRenderer();
 
 	void init(Strategy strategy, bp::Device& renderDevice, uint32_t width, uint32_t height,
 		  bp::Subpass& subpass);
 	void resize(uint32_t width, uint32_t height);
+	void selectStagingBuffers();
 	void render();
 	void copy(void* colorDst, void* depthDst = nullptr);
-	void prepareNextFrame();
 
 private:
 	Strategy strategy;
 	bp::Device* renderDevice;
 	bp::Texture colorAttachment;
 	bp::Texture depthAttachment;
+	std::array<bp::Buffer*, 2> colorStagingBuffers;
+	std::array<bp::Buffer*, 2> depthStagingBuffers;
 	bp::RenderPass renderPass;
 	bp::Subpass* subpass;
 	bp::CommandPool cmdPool;
 	VkCommandBuffer cmdBuffer;
 	bp::Queue* queue;
-	void* colorSrc;
-	void* depthSrc;
+	unsigned currentStagingBufferIndex, previousStagingBufferIndex;
 };
 
 

@@ -210,6 +210,7 @@ void MultiRenderer::render()
 		queue->submit({}, {frameCmdBuffer}, {});
 		queue->waitIdle();
 		double t1 = glfwGetTime();
+		unique_lock<mutex> lock(measureMut);
 		measureAccumulators["renderAndCopy0"] += t1 - t0;
 	}));
 
@@ -217,6 +218,7 @@ void MultiRenderer::render()
 	{
 		auto& r = secondaryRenderers[i - 1];
 		futures.push_back(async(launch::async, [&r, this, i]{
+			r.selectStagingBuffers();
 			auto renderFut = async(launch::async, [&r, this, i]{
 				double t0 = glfwGetTime();
 				r.render();
@@ -234,14 +236,9 @@ void MultiRenderer::render()
 			double t1 = glfwGetTime();
 			renderFut.wait();
 
-			double t2 = glfwGetTime();
-			r.prepareNextFrame();
-			double t3 = glfwGetTime();
-
 			{
 				unique_lock<mutex> lock(measureMut);
 				measureAccumulators["copy" + to_string(i)] += t1 - t0;
-				measureAccumulators["stage" + to_string(i)] += t3 - t2;
 			}
 		}));
 	}
