@@ -185,29 +185,27 @@ void MultiRenderer::render()
 {
 	window.handleEvents();
 
-	//Copy previous frame while rendering next
+	vector<future<void>> renderFutures;
+	vector<future<void>> copyFutures;
+
 	VkCommandBufferBeginInfo beginInfo = {};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
-	double t0 = glfwGetTime();
-	vkBeginCommandBuffer(frameCmdBuffer, &beginInfo);
-	if (resized)
-	{
-		recordRender();
-		recordCopy();
-		resized = false;
-	} else
-	{
-		recordCopy();
-		recordRender();
-	}
-	vkEndCommandBuffer(frameCmdBuffer);
-
-	vector<future<void>> renderFutures;
-	vector<future<void>> copyFutures;
-
-	auto primaryRenderFuture = async(launch::async, [this, t0]{
+	auto primaryRenderFuture = async(launch::async, [this, &beginInfo]{
+		double t0 = glfwGetTime();
+		vkBeginCommandBuffer(frameCmdBuffer, &beginInfo);
+		if (resized)
+		{
+			recordRender();
+			recordCopy();
+			resized = false;
+		} else
+		{
+			recordCopy();
+			recordRender();
+		}
+		vkEndCommandBuffer(frameCmdBuffer);
 		queue->submit({}, {frameCmdBuffer}, {});
 		queue->waitIdle();
 		double t1 = glfwGetTime();
@@ -245,7 +243,7 @@ void MultiRenderer::render()
 	for (auto& f : copyFutures) f.wait();
 	primaryRenderFuture.wait();
 
-	t0 = glfwGetTime();
+	double t0 = glfwGetTime();
 	vkBeginCommandBuffer(frameCmdBuffer, &beginInfo);
 	recordCompositing();
 	vkEndCommandBuffer(frameCmdBuffer);
