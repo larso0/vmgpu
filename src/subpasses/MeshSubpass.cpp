@@ -7,8 +7,8 @@ using namespace glm;
 
 void MeshSubpass::setClipTransform(float x, float y, float w, float h)
 {
-	clipTransform = scale(translate(mat4{}, {(2.f * x) / w - (1.f - w) / w,
-						 (2.f * y) / h - (1.f - h) / h, 0.f}),
+	clipTransform = scale(translate(mat4{}, {(2.f * x + w - 1.f) / w,
+						 (2.f * y + h - 1.f) / h, 0.f}),
 			      {1.f / w, 1.f / h, 1.f});
 }
 

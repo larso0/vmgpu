@@ -12,7 +12,8 @@ SecondaryRenderer::~SecondaryRenderer()
 	if (renderDevice != nullptr)
 	{
 		for (auto b : colorStagingBuffers) delete b;
-		for (auto b : depthStagingBuffers) delete b;
+		if (strategy == Strategy::SORT_LAST)
+			for (auto b : depthStagingBuffers) delete b;
 	}
 }
 
