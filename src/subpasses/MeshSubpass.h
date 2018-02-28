@@ -22,16 +22,18 @@ public:
 		mesh{nullptr},
 		offset{0}, count{0},
 		meshNode{nullptr},
+		meshNode2{nullptr},
 		camera{nullptr},
 		color{1.f, 0.f, 0.f} {}
 
 	void setScene(bpScene::Mesh& mesh, uint32_t offset, uint32_t count,
-		      bpScene::Node& meshNode, bpScene::Camera& camera)
+		      bpScene::Node& meshNode, bpScene::Node& meshNode2, bpScene::Camera& camera)
 	{
 		MeshSubpass::mesh = &mesh;
 		MeshSubpass::offset = offset;
 		MeshSubpass::count = count;
 		MeshSubpass::meshNode = &meshNode;
+		MeshSubpass::meshNode2 = &meshNode2;
 		MeshSubpass::camera = &camera;
 	}
 
@@ -63,6 +65,7 @@ private:
 	};
 
 	bpScene::Node* meshNode;
+	bpScene::Node* meshNode2;
 	bpScene::Camera* camera;
 	glm::mat4 clipTransform;
 	glm::vec3 color;

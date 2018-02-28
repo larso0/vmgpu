@@ -11,6 +11,7 @@
 #include "SingleRenderer.h"
 #include "MultiRenderer.h"
 #include "SortFirstBorderlessRenderer.h"
+#include "Scene.h"
 
 using namespace bp;
 using namespace bpScene;
@@ -25,6 +26,11 @@ int main(int argc, char** argv)
 	cout << "Loading '" << options.objPath << "'" << endl;
 	mesh.loadObj(options.objPath, Mesh::LoadFlags() << Mesh::POSITION << Mesh::NORMAL);
 	cout << "Initializing renderer" << endl;
+
+	Scene scene;
+	float aspectRatio = static_cast<float>(options.width) / static_cast<float>(options.height);
+	scene.camera.setPerspectiveProjection(glm::radians(60.f), aspectRatio, 0.01f, 1000.f);
+	scene.camera.update();
 
 	bpView::init();
 
@@ -80,7 +86,7 @@ int main(int argc, char** argv)
 	}
 	}
 
-	renderer->init(instance, options.width, options.height, mesh);
+	renderer->init(instance, options.width, options.height, mesh, scene);
 
 	if (options.strategy == Strategy::SortFirst || options.strategy == Strategy::SortLast)
 	{
@@ -122,7 +128,7 @@ int main(int argc, char** argv)
 			cout << flush;
 		}
 
-		renderer->update(delta);
+		scene.update(delta);
 	}
 
 	delete renderer;

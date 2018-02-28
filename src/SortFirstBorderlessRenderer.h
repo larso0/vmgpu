@@ -12,9 +12,7 @@ public:
 	SortFirstBorderlessRenderer() :
 		instance{nullptr},
 		mesh{nullptr},
-		meshNode{&sceneRoot},
-		cameraNode{&sceneRoot},
-		camera{&cameraNode},
+		scene{nullptr},
 		deviceCount{2} {}
 
 	void setDeviceCount(uint32_t deviceCount)
@@ -22,16 +20,14 @@ public:
 		SortFirstBorderlessRenderer::deviceCount = deviceCount;
 	}
 	void init(bp::Instance& instance, uint32_t width, uint32_t height,
-		  bpScene::Mesh& mesh) override;
+		  bpScene::Mesh& mesh, Scene& scene) override;
 	void render() override;
-	void update(float delta) override;
 	bool shouldClose() override;
 
 private:
 	bp::Instance* instance;
 	bpScene::Mesh* mesh;
-	bpScene::Node sceneRoot, meshNode, cameraNode;
-	bpScene::Camera camera;
+	Scene* scene;
 
 	uint32_t deviceCount;
 	std::vector<VkPhysicalDevice> physicalDevices;

@@ -27,9 +27,7 @@ public:
 		strategy{Strategy::SORT_LAST},
 		instance{nullptr},
 		mesh{nullptr},
-		meshNode{&sceneRoot},
-		cameraNode{&sceneRoot},
-		camera{&cameraNode},
+		scene{nullptr},
 		deviceCount{2},
 		frameCmdBuffer{VK_NULL_HANDLE},
 		queue{nullptr},
@@ -38,10 +36,9 @@ public:
 	void setStrategy(Strategy strategy) { MultiRenderer::strategy = strategy; }
 	void setDeviceCount(uint32_t count) { deviceCount = count; }
 	void init(bp::Instance& instance, uint32_t width, uint32_t height,
-		  bpScene::Mesh& mesh) override;
+		  bpScene::Mesh& mesh, Scene& scene) override;
 	void setColor(uint32_t deviceIndex, const glm::vec3& color);
 	void render() override;
-	void update(float delta) override;
 
 	bool shouldClose() override;
 	uint32_t getDeviceCount() const { return deviceCount; }
@@ -52,8 +49,7 @@ private:
 	Strategy strategy;
 	bp::Instance* instance;
 	bpScene::Mesh* mesh;
-	bpScene::Node sceneRoot, meshNode, cameraNode;
-	bpScene::Camera camera;
+	Scene* scene;
 
 	uint32_t deviceCount;
 	std::vector<bp::Device> devices;

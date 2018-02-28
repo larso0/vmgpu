@@ -5,16 +5,11 @@ using namespace bpUtil;
 using namespace bpScene;
 
 void SingleRenderer::init(Instance& instance, uint32_t width, uint32_t height,
-			  Mesh& mesh)
+			  Mesh& mesh, Scene& scene)
 {
 	SingleRenderer::instance = &instance;
 	SingleRenderer::mesh = &mesh;
-
-	float aspectRatio = static_cast<float>(width) / static_cast<float>(height);
-	camera.setPerspectiveProjection(glm::radians(60.f), aspectRatio, 0.01f, 1000.f);
-	cameraNode.translate(0.f, 0.f, 2.f);
-	sceneRoot.update();
-	camera.update();
+	SingleRenderer::scene = &scene;
 
 	window.init(instance, width, height, "vmgpu");
 	width = window.getWidth();
@@ -38,7 +33,8 @@ void SingleRenderer::init(Instance& instance, uint32_t width, uint32_t height,
 	depthAttachment.init(device, VK_FORMAT_D16_UNORM,
 			     VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, width, height);
 
-	meshSubpass.setScene(mesh, 0, mesh.getElementCount(), meshNode, camera);
+	meshSubpass.setScene(mesh, 0, mesh.getElementCount(), scene.nodes[0], scene.nodes[1],
+			     scene.camera);
 	meshSubpass.addColorAttachment(swapchain);
 	meshSubpass.setDepthAttachment(depthAttachment);
 
@@ -47,7 +43,8 @@ void SingleRenderer::init(Instance& instance, uint32_t width, uint32_t height,
 		depthAttachment.resize(w, h);
 		renderPass.setRenderArea({{}, {w, h}});
 		float aspectRatio = static_cast<float>(w) / static_cast<float>(h);
-		camera.setPerspectiveProjection(glm::radians(60.f), aspectRatio, 0.01f, 1000.f);
+		SingleRenderer::scene->camera.setPerspectiveProjection(glm::radians(60.f),
+								       aspectRatio, 0.01f, 1000.f);
 	});
 
 	renderPass.addSubpassGraph(meshSubpass);
@@ -77,12 +74,6 @@ void SingleRenderer::render()
 	queue->waitIdle();
 
 	swapchain.present(renderCompleteSem);
-}
-
-void SingleRenderer::update(float delta)
-{
-	meshNode.rotate(delta, {0.f, 1.f, 0.f});
-	meshNode.update();
 }
 
 bool SingleRenderer::shouldClose()

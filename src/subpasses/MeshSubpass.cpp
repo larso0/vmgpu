@@ -58,6 +58,14 @@ void MeshSubpass::render(VkCommandBuffer cmdBuffer)
 	vkCmdBindVertexBuffers(cmdBuffer, 0, 1, &vertexBufferHandle, &vertexBufferOffset);
 	vkCmdBindIndexBuffer(cmdBuffer, indexBuffer, indexBufferOffset, VK_INDEX_TYPE_UINT32);
 	vkCmdDrawIndexed(cmdBuffer, count, 1, 0, 0, 0);
+
+	//Ad hoc benchmarking draw a second time
+	pushConstant.mvpMatrix = clipTransform * camera->getProjectionMatrix()
+				 * camera->getViewMatrix() * meshNode2->getWorldMatrix();
+	pushConstant.normalMatrix = transpose(inverse(meshNode2->getWorldMatrix()));
+	vkCmdPushConstants(cmdBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0,
+			   sizeof(PushConstant), &pushConstant);
+	vkCmdDrawIndexed(cmdBuffer, count, 1, 0, 0, 0);
 }
 
 void MeshSubpass::initShaders()

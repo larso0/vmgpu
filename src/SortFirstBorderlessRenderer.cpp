@@ -5,17 +5,11 @@ using namespace bp;
 using namespace std;
 
 void SortFirstBorderlessRenderer::init(Instance& instance, uint32_t width, uint32_t height,
-				       bpScene::Mesh& mesh)
+				       bpScene::Mesh& mesh, Scene& scene)
 {
 	SortFirstBorderlessRenderer::instance = &instance;
 	SortFirstBorderlessRenderer::mesh = &mesh;
-
-	//Setup scene
-	float aspectRatio = static_cast<float>(width) / static_cast<float>(height);
-	camera.setPerspectiveProjection(glm::radians(60.f), aspectRatio, 0.01f, 1000.f);
-	cameraNode.translate(0.f, 0.f, 2.f);
-	sceneRoot.update();
-	camera.update();
+	SortFirstBorderlessRenderer::scene = &scene;
 
 	//Find the devices
 	DeviceRequirements requirements;
@@ -40,7 +34,8 @@ void SortFirstBorderlessRenderer::init(Instance& instance, uint32_t width, uint3
 
 	for (auto i = 0; i < deviceCount; i++)
 	{
-		subpasses[i].setScene(mesh, 0, mesh.getElementCount(), meshNode, camera);
+		subpasses[i].setScene(mesh, 0, mesh.getElementCount(), scene.nodes[0],
+				      scene.nodes[1], scene.camera);
 		subpasses[i].setClipTransform(
 			static_cast<float>(areas[i].offset.x) / static_cast<float>(width),
 			static_cast<float>(areas[i].offset.y) / static_cast<float>(height),
@@ -60,12 +55,6 @@ void SortFirstBorderlessRenderer::render()
 
 	for (auto& r : subRenderers)
 		r.present();
-}
-
-void SortFirstBorderlessRenderer::update(float delta)
-{
-	meshNode.rotate(delta, {0.f, 1.f, 0.f});
-	meshNode.update();
 }
 
 bool SortFirstBorderlessRenderer::shouldClose()

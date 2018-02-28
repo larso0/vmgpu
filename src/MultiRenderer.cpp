@@ -8,23 +8,18 @@ using namespace bp;
 using namespace bpUtil;
 using namespace std;
 
-void MultiRenderer::init(Instance& instance, uint32_t width, uint32_t height, bpScene::Mesh& mesh)
+void MultiRenderer::init(Instance& instance, uint32_t width, uint32_t height, bpScene::Mesh& mesh,
+			 Scene& scene)
 {
 	MultiRenderer::instance = &instance;
 	MultiRenderer::mesh = &mesh;
+	MultiRenderer::scene = &scene;
 
 	devices.reserve(deviceCount);
 	secondaryRenderers.reserve(deviceCount - 1);
 	subpasses.reserve(deviceCount);
 	compositingColorSources.reserve(deviceCount);
 	compositingDepthSources.reserve(deviceCount);
-
-	//Setup scene
-	float aspectRatio = static_cast<float>(width) / static_cast<float>(height);
-	camera.setPerspectiveProjection(glm::radians(60.f), aspectRatio, 0.01f, 1000.f);
-	cameraNode.translate(0.f, 0.f, 2.f);
-	sceneRoot.update();
-	camera.update();
 
 	//Initialize window
 	window.init(instance, width, height, "vmgpu");
@@ -95,7 +90,8 @@ void MultiRenderer::init(Instance& instance, uint32_t width, uint32_t height, bp
 				   VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
 				   area.extent.width, area.extent.height);
 	subpasses.emplace_back();
-	subpasses[0].setScene(mesh, portions[0].first, portions[0].second, meshNode, camera);
+	subpasses[0].setScene(mesh, portions[0].first, portions[0].second, scene.nodes[0],
+			      scene.nodes[1], scene.camera);
 	subpasses[0].setClipTransform(
 		static_cast<float>(area.offset.x) / static_cast<float>(width),
 		static_cast<float>(area.offset.y) / static_cast<float>(height),
@@ -114,8 +110,8 @@ void MultiRenderer::init(Instance& instance, uint32_t width, uint32_t height, bp
 		const auto& area = renderAreas[i];
 
 		subpasses.emplace_back();
-		subpasses[i].setScene(mesh, portions[i].first, portions[i].second, meshNode,
-				      camera);
+		subpasses[i].setScene(mesh, portions[i].first, portions[i].second, scene.nodes[0],
+				      scene.nodes[1], scene.camera);
 		subpasses[i].setClipTransform(
 			static_cast<float>(area.offset.x) / static_cast<float>(width),
 			static_cast<float>(area.offset.y) / static_cast<float>(height),
@@ -262,12 +258,6 @@ void MultiRenderer::render()
 	for (auto& f : renderFutures) f.wait();
 }
 
-void MultiRenderer::update(float delta)
-{
-	meshNode.rotate(delta, {0.f, 1.f, 0.f});
-	meshNode.update();
-}
-
 bool MultiRenderer::shouldClose()
 {
 	return static_cast<bool>(glfwWindowShouldClose(window.getHandle()));
@@ -345,7 +335,7 @@ void MultiRenderer::resize(uint32_t w, uint32_t h)
 	if (strategy == Strategy::SORT_LAST) depthAttachment.resize(w, h);
 	compositingRenderPass.setRenderArea({{}, {w, h}});
 	float aspectRatio = static_cast<float>(w) / static_cast<float>(h);
-	camera.setPerspectiveProjection(glm::radians(60.f), aspectRatio, 0.01f, 1000.f);
+	scene->camera.setPerspectiveProjection(glm::radians(60.f), aspectRatio, 0.01f, 1000.f);
 
 	auto renderAreas = calcululateSubRendererAreas(w, h);
 	renderColorAttachment.resize(renderAreas[0].extent.width, renderAreas[0].extent.height);
