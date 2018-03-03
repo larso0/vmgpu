@@ -33,8 +33,7 @@ void SingleRenderer::init(Instance& instance, uint32_t width, uint32_t height,
 	depthAttachment.init(device, VK_FORMAT_D16_UNORM,
 			     VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, width, height);
 
-	meshSubpass.setScene(mesh, 0, mesh.getElementCount(), scene.nodes[0], scene.nodes[1],
-			     scene.camera);
+	meshSubpass.setScene(mesh, 0, mesh.getElementCount(), scene);
 	meshSubpass.addColorAttachment(swapchain);
 	meshSubpass.setDepthAttachment(depthAttachment);
 

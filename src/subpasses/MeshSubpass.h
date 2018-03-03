@@ -12,6 +12,7 @@
 #include <bp/DescriptorPool.h>
 #include <bp/DescriptorSet.h>
 #include <bp/BufferDescriptor.h>
+#include "../Scene.h"
 
 class MeshSubpass : public bp::Subpass
 {
@@ -21,20 +22,15 @@ public:
 		renderPass{nullptr},
 		mesh{nullptr},
 		offset{0}, count{0},
-		meshNode{nullptr},
-		meshNode2{nullptr},
-		camera{nullptr},
+		scene{nullptr},
 		color{1.f, 0.f, 0.f} {}
 
-	void setScene(bpScene::Mesh& mesh, uint32_t offset, uint32_t count,
-		      bpScene::Node& meshNode, bpScene::Node& meshNode2, bpScene::Camera& camera)
+	void setScene(bpScene::Mesh& mesh, uint32_t offset, uint32_t count, Scene& scene)
 	{
 		MeshSubpass::mesh = &mesh;
 		MeshSubpass::offset = offset;
 		MeshSubpass::count = count;
-		MeshSubpass::meshNode = &meshNode;
-		MeshSubpass::meshNode2 = &meshNode2;
-		MeshSubpass::camera = &camera;
+		MeshSubpass::scene = &scene;
 	}
 
 	void setClipTransform(float x, float y, float w, float h);
@@ -64,9 +60,7 @@ private:
 		glm::mat4 normalMatrix;
 	};
 
-	bpScene::Node* meshNode;
-	bpScene::Node* meshNode2;
-	bpScene::Camera* camera;
+	Scene* scene;
 	glm::mat4 clipTransform;
 	glm::vec3 color;
 

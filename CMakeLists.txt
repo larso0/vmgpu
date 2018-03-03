@@ -52,7 +52,9 @@ target_link_libraries(vmgpu
 		      ${BP_VIEW_LIBRARIES}
 		      ${Boost_LIBRARIES})
 
-set(GLSLANG_VALIDATOR glslangValidator)
+if (NOT GLSLANG_VALIDATOR)
+	set(GLSLANG_VALIDATOR glslangValidator)
+endif()
 foreach(SHADER ${SHADERS})
 	get_filename_component(FILE_NAME ${SHADER} NAME)
 	set(SPIRV "${PROJECT_BINARY_DIR}/spv/${FILE_NAME}.spv")

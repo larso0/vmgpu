@@ -12,11 +12,15 @@ public:
 		camera{&cameraNode}
 	{
 		cameraNode.translate(0.f, 0.f, 2.f);
-		nodes.reserve(2);
+		nodes.reserve(4);
 		nodes.emplace_back(&sceneRoot);
 		nodes.emplace_back(&sceneRoot);
-		nodes[0].translate(-0.5f, 0.f, 0.f);
-		nodes[1].translate(0.5f, 0.f, 0.f);
+		nodes.emplace_back(&sceneRoot);
+		nodes.emplace_back(&sceneRoot);
+		nodes[0].translate(-0.5f, 0.5f, 0.f);
+		nodes[1].translate(0.5f, 0.5f, 0.f);
+		nodes[2].translate(-0.5f, -0.5f, 0.f);
+		nodes[3].translate(0.5f, -0.5f, 0.f);
 		sceneRoot.update();
 		camera.update();
 	}
@@ -25,6 +29,8 @@ public:
 	{
 		nodes[0].rotate(delta, {0.f, 1.f, 0.f});
 		nodes[1].rotate(delta, {0.f, 1.f, 0.f});
+		nodes[2].rotate(delta, {0.f, 1.f, 0.f});
+		nodes[3].rotate(delta, {0.f, 1.f, 0.f});
 		sceneRoot.update();
 	}
 

@@ -90,8 +90,7 @@ void MultiRenderer::init(Instance& instance, uint32_t width, uint32_t height, bp
 				   VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
 				   area.extent.width, area.extent.height);
 	subpasses.emplace_back();
-	subpasses[0].setScene(mesh, portions[0].first, portions[0].second, scene.nodes[0],
-			      scene.nodes[1], scene.camera);
+	subpasses[0].setScene(mesh, portions[0].first, portions[0].second, scene);
 	subpasses[0].setClipTransform(
 		static_cast<float>(area.offset.x) / static_cast<float>(width),
 		static_cast<float>(area.offset.y) / static_cast<float>(height),
@@ -110,8 +109,7 @@ void MultiRenderer::init(Instance& instance, uint32_t width, uint32_t height, bp
 		const auto& area = renderAreas[i];
 
 		subpasses.emplace_back();
-		subpasses[i].setScene(mesh, portions[i].first, portions[i].second, scene.nodes[0],
-				      scene.nodes[1], scene.camera);
+		subpasses[i].setScene(mesh, portions[i].first, portions[i].second, scene);
 		subpasses[i].setClipTransform(
 			static_cast<float>(area.offset.x) / static_cast<float>(width),
 			static_cast<float>(area.offset.y) / static_cast<float>(height),

@@ -34,8 +34,7 @@ void SortFirstBorderlessRenderer::init(Instance& instance, uint32_t width, uint3
 
 	for (auto i = 0; i < deviceCount; i++)
 	{
-		subpasses[i].setScene(mesh, 0, mesh.getElementCount(), scene.nodes[0],
-				      scene.nodes[1], scene.camera);
+		subpasses[i].setScene(mesh, 0, mesh.getElementCount(), scene);
 		subpasses[i].setClipTransform(
 			static_cast<float>(areas[i].offset.x) / static_cast<float>(width),
 			static_cast<float>(areas[i].offset.y) / static_cast<float>(height),
