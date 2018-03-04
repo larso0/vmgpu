@@ -22,15 +22,10 @@ int main(int argc, char** argv)
 	Options options;
 	try { options = parseOptions(argc, argv); } catch (int e) { return e; }
 
-	Mesh mesh;
-	cout << "Loading '" << options.objPath << "'" << endl;
-	mesh.loadObj(options.objPath, Mesh::LoadFlags() << Mesh::POSITION << Mesh::NORMAL);
 	cout << "Initializing renderer" << endl;
 
+	Mesh mesh;
 	Scene scene;
-	float aspectRatio = static_cast<float>(options.width) / static_cast<float>(options.height);
-	scene.camera.setPerspectiveProjection(glm::radians(60.f), aspectRatio, 0.01f, 1000.f);
-	scene.camera.update();
 
 	bpView::init();
 

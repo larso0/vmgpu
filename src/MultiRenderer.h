@@ -3,7 +3,7 @@
 
 #include "Renderer.h"
 #include "subpasses/CompositingSubpass.h"
-#include "subpasses/MeshSubpass.h"
+#include "subpasses/SFBenchSubpass.h"
 #include "SecondaryRenderer.h"
 #include <bpView/Window.h>
 #include <bp/Device.h>
@@ -24,7 +24,7 @@ public:
 	using Strategy = SecondaryRenderer::Strategy;
 
 	MultiRenderer() :
-		strategy{Strategy::SORT_LAST},
+		strategy{Strategy::SORT_FIRST},
 		instance{nullptr},
 		mesh{nullptr},
 		scene{nullptr},
@@ -54,7 +54,7 @@ private:
 	uint32_t deviceCount;
 	std::vector<bp::Device> devices;
 	std::vector<SecondaryRenderer> secondaryRenderers;
-	std::vector<MeshSubpass> subpasses;
+	std::vector<SFBenchSubpass> subpasses;
 
 	bp::Texture renderColorAttachment;
 	bp::Texture renderDepthAttachment;

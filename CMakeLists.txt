@@ -45,7 +45,7 @@ include_directories(${BP_INCLUDE_DIRS}
 		    ${BP_VIEW_INCLUDE_DIRS}
 		    ${Boost_INCLUDE_DIRS})
 
-add_executable(vmgpu ${SRC})
+add_executable(vmgpu ${SRC} src/subpasses/SFBenchSubpass.cpp src/subpasses/SFBenchSubpass.h)
 target_link_libraries(vmgpu
 		      ${BP_LIBRARIES}
 		      ${BP_SCENE_LIBRARIES}

@@ -11,6 +11,8 @@ using namespace std;
 void MultiRenderer::init(Instance& instance, uint32_t width, uint32_t height, bpScene::Mesh& mesh,
 			 Scene& scene)
 {
+	if (strategy == Strategy::SORT_LAST) throw runtime_error("This version of vmgpu only support sort-first.");
+
 	MultiRenderer::instance = &instance;
 	MultiRenderer::mesh = &mesh;
 	MultiRenderer::scene = &scene;
@@ -90,8 +92,7 @@ void MultiRenderer::init(Instance& instance, uint32_t width, uint32_t height, bp
 				   VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
 				   area.extent.width, area.extent.height);
 	subpasses.emplace_back();
-	subpasses[0].setScene(mesh, portions[0].first, portions[0].second, scene);
-	subpasses[0].setClipTransform(
+	subpasses[0].setArea(
 		static_cast<float>(area.offset.x) / static_cast<float>(width),
 		static_cast<float>(area.offset.y) / static_cast<float>(height),
 		static_cast<float>(area.extent.width) / static_cast<float>(width),
@@ -109,8 +110,7 @@ void MultiRenderer::init(Instance& instance, uint32_t width, uint32_t height, bp
 		const auto& area = renderAreas[i];
 
 		subpasses.emplace_back();
-		subpasses[i].setScene(mesh, portions[i].first, portions[i].second, scene);
-		subpasses[i].setClipTransform(
+		subpasses[i].setArea(
 			static_cast<float>(area.offset.x) / static_cast<float>(width),
 			static_cast<float>(area.offset.y) / static_cast<float>(height),
 			static_cast<float>(area.extent.width) / static_cast<float>(width),
@@ -172,7 +172,7 @@ void MultiRenderer::init(Instance& instance, uint32_t width, uint32_t height, bp
 
 void MultiRenderer::setColor(uint32_t deviceIndex, const glm::vec3& color)
 {
-	subpasses[deviceIndex].setColor(color);
+	//subpasses[deviceIndex].setColor(color);
 }
 
 void MultiRenderer::render()
@@ -346,7 +346,7 @@ void MultiRenderer::resize(uint32_t w, uint32_t h)
 	for (auto i = 0; i < deviceCount; i++)
 	{
 		const auto& area = renderAreas[i];
-		subpasses[i].setClipTransform(
+		subpasses[i].setArea(
 			static_cast<float>(area.offset.x) / static_cast<float>(w),
 			static_cast<float>(area.offset.y) / static_cast<float>(h),
 			static_cast<float>(area.extent.width) / static_cast<float>(w),

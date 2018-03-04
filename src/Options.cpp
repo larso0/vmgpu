@@ -69,11 +69,6 @@ Options parseOptions(int argc, char** argv)
 	if (arguments.count("file"))
 	{
 		result.objPath = arguments["file"].as<string>();
-	} else
-	{
-		cerr << "Can't load mesh, no obj file was specified.\n";
-		cout << options << endl;
-		throw 2;
 	}
 
 	return result;
