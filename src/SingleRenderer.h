@@ -9,7 +9,7 @@
 #include <bp/RenderPass.h>
 #include <bp/CommandPool.h>
 #include <bp/Semaphore.h>
-#include "subpasses/MeshSubpass.h"
+#include "subpasses/SFBenchSubpass.h"
 
 class SingleRenderer : public Renderer
 {
@@ -36,7 +36,7 @@ private:
 	bp::Device device;
 	bp::Swapchain swapchain;
 	bp::Texture depthAttachment;
-	MeshSubpass meshSubpass;
+	SFBenchSubpass meshSubpass;
 	bp::RenderPass renderPass;
 	bp::CommandPool cmdPool;
 	bp::Semaphore renderCompleteSem;

@@ -2,7 +2,7 @@
 #define VMGPU_SORTFIRSTBORDERLESSRENDERER_H
 
 #include "Renderer.h"
-#include "subpasses/MeshSubpass.h"
+#include "subpasses/SFBenchSubpass.h"
 #include "BorderlessSubRenderer.h"
 #include <utility>
 
@@ -32,7 +32,7 @@ private:
 	uint32_t deviceCount;
 	std::vector<VkPhysicalDevice> physicalDevices;
 	std::vector<BorderlessSubRenderer> subRenderers;
-	std::vector<MeshSubpass> subpasses;
+	std::vector<SFBenchSubpass> subpasses;
 	std::vector<VkRect2D> areas;
 
 	std::vector<VkRect2D> calcululateSubRendererAreas(uint32_t width, uint32_t height);
