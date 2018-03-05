@@ -45,7 +45,7 @@ void MeshSubpass::render(VkCommandBuffer cmdBuffer)
 			     * camera->getViewMatrix() * meshNode->getWorldMatrix(),
 		.normalMatrix = transpose(inverse(meshNode->getWorldMatrix()))
 	};
-	vkCmdPushConstants(cmdBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0,
+	vkCmdPushConstants(cmdBuffer, pipelineLayout, VK_SHADER_STAGE_GEOMETRY_BIT, 0,
 			   sizeof(PushConstant), &pushConstant);
 
 	VkDescriptorSet set = descriptorSet;
@@ -66,6 +66,10 @@ void MeshSubpass::initShaders()
 	vertexShader.init(*device, VK_SHADER_STAGE_VERTEX_BIT,
 			  static_cast<uint32_t>(vertexShaderCode.size()),
 			  reinterpret_cast<const uint32_t*>(vertexShaderCode.data()));
+	auto geometryShaderCode = readBinaryFile("spv/generateNormals.geom.spv");
+	geometryShader.init(*device, VK_SHADER_STAGE_GEOMETRY_BIT,
+			    static_cast<uint32_t>(geometryShaderCode.size()),
+			    reinterpret_cast<const uint32_t*>(geometryShaderCode.data()));
 	auto fragmentShaderCode = readBinaryFile("spv/basic.frag.spv");
 	fragmentShader.init(*device, VK_SHADER_STAGE_FRAGMENT_BIT,
 			    static_cast<uint32_t>(fragmentShaderCode.size()),
@@ -82,19 +86,18 @@ void MeshSubpass::initDescriptorSetLayout()
 void MeshSubpass::initPipelineLayout()
 {
 	pipelineLayout.addDescriptorSetLayout(descriptorSetLayout);
-	pipelineLayout.addPushConstantRange({VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PushConstant)});
+	pipelineLayout.addPushConstantRange({VK_SHADER_STAGE_GEOMETRY_BIT, 0, sizeof(PushConstant)});
 	pipelineLayout.init(*device);
 }
 
 void MeshSubpass::initPipeline()
 {
 	pipeline.addShaderStageInfo(vertexShader.getPipelineShaderStageInfo());
+	pipeline.addShaderStageInfo(geometryShader.getPipelineShaderStageInfo());
 	pipeline.addShaderStageInfo(fragmentShader.getPipelineShaderStageInfo());
 	pipeline.addVertexBindingDescription({0, Vertex::STRIDE, VK_VERTEX_INPUT_RATE_VERTEX});
 	pipeline.addVertexAttributeDescription({0, 0, VK_FORMAT_R32G32B32_SFLOAT,
 						Vertex::POSITION_OFFSET});
-	pipeline.addVertexAttributeDescription({1, 0, VK_FORMAT_R32G32B32_SFLOAT,
-						Vertex::NORMAL_OFFSET});
 	pipeline.init(*device, *renderPass, pipelineLayout);
 }
 

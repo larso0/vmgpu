@@ -46,7 +46,7 @@ private:
 	bpScene::Mesh* mesh;
 	uint32_t offset, count;
 
-	bp::Shader vertexShader, fragmentShader;
+	bp::Shader vertexShader, geometryShader, fragmentShader;
 	bp::DescriptorSetLayout descriptorSetLayout;
 	bp::PipelineLayout pipelineLayout;
 	bp::GraphicsPipeline pipeline;

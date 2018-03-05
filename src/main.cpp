@@ -11,10 +11,13 @@
 #include "SingleRenderer.h"
 #include "MultiRenderer.h"
 #include "SortFirstBorderlessRenderer.h"
+#include <boost/filesystem.hpp>
 
 using namespace bp;
 using namespace bpScene;
 using namespace std;
+
+namespace fs = boost::filesystem;
 
 int main(int argc, char** argv)
 {
@@ -22,8 +25,18 @@ int main(int argc, char** argv)
 	try { options = parseOptions(argc, argv); } catch (int e) { return e; }
 
 	Mesh mesh;
-	cout << "Loading '" << options.objPath << "'" << endl;
-	mesh.loadObj(options.objPath, Mesh::LoadFlags() << Mesh::POSITION << Mesh::NORMAL);
+
+	fs::path path{options.objPath};
+	for (fs::directory_iterator i{path}; i != fs::directory_iterator{}; ++i)
+	{
+		if (fs::is_regular_file(i->path()) && i->path().extension() == ".obj")
+		{
+			cout << "Loading " << i->path() << endl;
+			mesh.loadObj(i->path().string(), Mesh::LoadFlags{} << Mesh::POSITION);
+		}
+		if (mesh.getVertexDataSize() + mesh.getIndexDataSize() > 600000000) break;
+	}
+
 	cout << "Initializing renderer" << endl;
 
 	bpView::init();

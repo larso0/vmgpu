@@ -12,7 +12,7 @@ void SingleRenderer::init(Instance& instance, uint32_t width, uint32_t height,
 
 	float aspectRatio = static_cast<float>(width) / static_cast<float>(height);
 	camera.setPerspectiveProjection(glm::radians(60.f), aspectRatio, 0.01f, 1000.f);
-	cameraNode.translate(0.f, 0.f, 2.f);
+	cameraNode.translate(0.f, 0.f, 2000.f);
 	sceneRoot.update();
 	camera.update();
 

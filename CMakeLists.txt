@@ -21,7 +21,7 @@ find_package(bp REQUIRED)
 find_package(bpScene REQUIRED)
 find_package(bpView REQUIRED)
 find_package(Boost REQUIRED
-	     COMPONENTS "program_options")
+	     COMPONENTS "program_options" "filesystem")
 
 if(UNIX)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
