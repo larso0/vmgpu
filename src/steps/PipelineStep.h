@@ -22,6 +22,7 @@ public:
 	}
 
 	unsigned getOutputCount() const { return outputs.size(); }
+	Output& getOutput(unsigned index) { return outputs[index]; }
 
 protected:
 	virtual void prepare(Output&) {}
