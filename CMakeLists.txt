@@ -1,9 +1,13 @@
-cmake_minimum_required(VERSION 3.9)
+cmake_minimum_required(VERSION 3.3)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${BP_ROOT_DIR}/CMakeModules")
-set(CMAKE_CONFIGURATION_TYPES "Debug;Release")
 project(vmgpu)
 
 set(CMAKE_CXX_STANDARD 11)
+if (MSVC)
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
+elseif(UNIX)
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
+endif()
 
 set(SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
 file(GLOB_RECURSE SRC "${SRC_DIR}/*.cpp" "${SRC_DIR}/*.c" "${SRC_DIR}/*.h" "${SRC_DIR}/*.hpp")
@@ -19,40 +23,23 @@ file(GLOB_RECURSE SHADERS
 
 find_package(bp REQUIRED)
 find_package(bpScene REQUIRED)
-find_package(bpView REQUIRED)
+find_package(bpQt REQUIRED)
 find_package(Boost REQUIRED
 	     COMPONENTS "program_options")
 
-if(UNIX)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
-endif()
-
-if (NOT BP_FOUND)
-	message(SEND_ERROR "bp not found")
-endif()
-if (NOT BP_SCENE_FOUND)
-	message(SEND_ERROR "bpScene not found")
-endif()
-if (NOT BP_VIEW_FOUND)
-	message(SEND_ERROR "bpView not found")
-endif()
-if (NOT Boost_FOUND)
-	message(SEND_ERROR "Required Boost libraries not found.")
-endif()
-
 include_directories(${BP_INCLUDE_DIRS}
 		    ${BP_SCENE_INCLUDE_DIRS}
-		    ${BP_VIEW_INCLUDE_DIRS}
+		    ${BP_QT_INCLUDE_DIRS}
 		    ${Boost_INCLUDE_DIRS})
 
 add_executable(vmgpu ${SRC})
 target_link_libraries(vmgpu
 		      ${BP_LIBRARIES}
 		      ${BP_SCENE_LIBRARIES}
-		      ${BP_VIEW_LIBRARIES}
+		      ${BP_QT_LIBRARIES}
 		      ${Boost_LIBRARIES})
 
-set(GLSLANG_VALIDATOR glslangValidator)
+find_program(GLSLANG_VALIDATOR glslangValidator)
 foreach(SHADER ${SHADERS})
 	get_filename_component(FILE_NAME ${SHADER} NAME)
 	set(SPIRV "${PROJECT_BINARY_DIR}/spv/${FILE_NAME}.spv")
