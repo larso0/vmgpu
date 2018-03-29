@@ -49,6 +49,11 @@ void ResourceManager::addEntity(unsigned meshIndex, Node& node)
 	subpass.addDrawable(drawables[drawableId]);
 }
 
+void ResourceManager::setClipTransform(const glm::mat4& transform)
+{
+	for (auto& pc : pushConstants) pc.setClipTransform(transform);
+}
+
 void ResourceManager::updatePushConstants()
 {
 	for (auto& pc : pushConstants) pc.update();

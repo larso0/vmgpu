@@ -22,21 +22,24 @@ file(GLOB_RECURSE SHADERS
      "${SHADERS_DIR}/*.comp")
 
 find_package(bp REQUIRED)
-find_package(bpScene REQUIRED)
+find_package(bpMulti REQUIRED)
 find_package(bpQt REQUIRED)
+find_package(bpScene REQUIRED)
 find_package(Boost REQUIRED
 	     COMPONENTS "program_options")
 
 include_directories(${BP_INCLUDE_DIRS}
-		    ${BP_SCENE_INCLUDE_DIRS}
+		    ${BP_MULTI_INCLUDE_DIRS}
 		    ${BP_QT_INCLUDE_DIRS}
+		    ${BP_SCENE_INCLUDE_DIRS}
 		    ${Boost_INCLUDE_DIRS})
 
 add_executable(vmgpu ${SRC})
 target_link_libraries(vmgpu
 		      ${BP_LIBRARIES}
-		      ${BP_SCENE_LIBRARIES}
+		      ${BP_MULTI_LIBRARIES}
 		      ${BP_QT_LIBRARIES}
+		      ${BP_SCENE_LIBRARIES}
 		      ${Boost_LIBRARIES})
 
 find_program(GLSLANG_VALIDATOR glslangValidator)

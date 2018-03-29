@@ -18,6 +18,7 @@ public:
 	void init(bp::Device& device, bp::RenderPass& renderPass, bpScene::Camera& camera);
 	unsigned addMesh(bpScene::Mesh& mesh);
 	void addEntity(unsigned meshIndex, bpScene::Node& node);
+	void setClipTransform(const glm::mat4& transform);
 	void updatePushConstants();
 
 	bp::Subpass& getSubpass() { return subpass; }
