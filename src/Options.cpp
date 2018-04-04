@@ -66,6 +66,8 @@ Options parseOptions(int argc, char** argv)
 		if (result.deviceCount < 2) result.strategy = Strategy::Single;
 	}
 
+	if (result.strategy == Strategy::Single) result.deviceCount = 1;
+
 	if (arguments.count("file"))
 	{
 		result.objPath = arguments["file"].as<string>();

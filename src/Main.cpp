@@ -14,11 +14,6 @@ int main(int argc, char** argv)
 	Options options;
 	try { options = parseOptions(argc, argv); } catch (int e) { return e; }
 
-	Mesh mesh;
-	qInfo() << "Loading '" << options.objPath.c_str() << "'";
-	mesh.loadObj(options.objPath, Mesh::LoadFlags() << Mesh::POSITION << Mesh::NORMAL);
-	qInfo() << "Initializing renderer";
-
 	QVulkanInstance instance;
 
 #ifndef NDEBUG
@@ -29,7 +24,7 @@ int main(int argc, char** argv)
 	if (!instance.create())
 		qFatal("Failed to create instance.");
 
-	Vmgpu vmgpu{instance};
+	Vmgpu vmgpu{instance, options};
 	vmgpu.resize(options.width, options.height);
 	vmgpu.show();
 
