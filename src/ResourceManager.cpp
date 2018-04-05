@@ -35,7 +35,9 @@ void ResourceManager::init(Device& device, RenderPass& renderPass, Camera& camer
 
 unsigned ResourceManager::addMesh(Mesh& mesh)
 {
-	return meshes.createResource(*device, mesh);
+	unsigned id = meshes.createResource();
+	meshes[id].init(*device, mesh);
+	return id;
 }
 
 void ResourceManager::addEntity(unsigned meshIndex, Node& node)

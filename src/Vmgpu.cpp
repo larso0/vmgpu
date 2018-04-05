@@ -56,17 +56,24 @@ void Vmgpu::initRenderResources(uint32_t width, uint32_t height)
 	default: throw runtime_error("Unsupported strategy.");
 	}
 
+	depthAttachment.init(device, VK_FORMAT_D16_UNORM,
+			     VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, width, height);
+	depthAttachment.setClearValue({1.f, 0.f});
+	framebuffer.setAttachment(mainRenderer->getColorAttachmentSlot(), swapchain);
+	framebuffer.setAttachment(mainRenderer->getDepthAttachmentSlot(), depthAttachment);
+	framebuffer.init(mainRenderer->getRenderPass(), width, height);
+
 	qInfo() << "Rendering...";
 }
 
 void Vmgpu::resizeRenderResources(uint32_t width, uint32_t height)
 {
+	mainRenderer->resize(width, height);
+	depthAttachment.resize(width, height);
+	framebuffer.resize(width, height);
 	camera.setPerspectiveProjection(glm::radians(60.f),
 					static_cast<float>(width) / static_cast<float>(height),
 					0.1f, 100.f);
-	camera.update();
-	mainRenderer->resize(width, height);
-	Window::resizeRenderResources(width, height);
 }
 
 void Vmgpu::specifyDeviceRequirements(DeviceRequirements& requirements)
