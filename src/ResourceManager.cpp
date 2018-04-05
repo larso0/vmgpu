@@ -40,10 +40,11 @@ unsigned ResourceManager::addMesh(Mesh& mesh)
 
 void ResourceManager::addEntity(unsigned meshIndex, Node& node)
 {
-	unsigned drawableId = drawables.createResource(pipeline, meshes[meshIndex], 0,
-						       meshes[meshIndex].getElementCount());
-	unsigned pushId = pushConstants.createResource(pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT,
-						       node, *camera);
+	unsigned drawableId = drawables.createResource();
+	drawables[drawableId].init(pipeline, meshes[meshIndex], 0,
+				   meshes[meshIndex].getElementCount());
+	unsigned pushId = pushConstants.createResource();
+	pushConstants[pushId].init(pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, node, *camera);
 	bpUtil::connect(drawables[drawableId].resourceBindingEvent, pushConstants[pushId],
 			&PushConstantResource::bind);
 	subpass.addDrawable(drawables[drawableId]);

@@ -19,7 +19,7 @@ public:
 		options{options},
 		camera{&cameraNode}
 	{
-		setVSync(true);
+		setContinuousRendering(true);
 	}
 
 private:
@@ -39,14 +39,10 @@ private:
 	void initSortFirst(uint32_t width, uint32_t height);
 	void initSortLast(uint32_t width, uint32_t height);
 
-	void resizeRenderResources(uint32_t width, uint32_t height) override
-	{
-		Window::resizeRenderResources(width, height);
-	}
-
+	void resizeRenderResources(uint32_t width, uint32_t height) override;
 	void specifyDeviceRequirements(bp::DeviceRequirements& requirements) override;
-	void render(VkCommandBuffer cmdBuffer) override {}
-	void update(double frameDeltaTime) override {}
+	void render(VkCommandBuffer cmdBuffer) override;
+	void update(double frameDeltaTime) override;
 };
 
 
