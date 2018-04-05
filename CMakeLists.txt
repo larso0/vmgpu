@@ -1,5 +1,8 @@
+set(BP_MODULES "Multi;Qt;Scene")
+add_subdirectory(bp)
+
 cmake_minimum_required(VERSION 3.3)
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${BP_ROOT_DIR}/CMakeModules")
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "bp/CMakeModules")
 project(vmgpu)
 
 set(CMAKE_CXX_STANDARD 11)
@@ -9,38 +12,21 @@ elseif(UNIX)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
 endif()
 
-set(SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
-file(GLOB_RECURSE SRC "${SRC_DIR}/*.cpp" "${SRC_DIR}/*.c" "${SRC_DIR}/*.h" "${SRC_DIR}/*.hpp")
+file(GLOB_RECURSE SRC "src/*.cpp" "src/*.c" "src/*.h" "src/*.hpp")
 
-set(SHADERS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/shaders)
 file(GLOB_RECURSE SHADERS
-     "${SHADERS_DIR}/*.vert"
-     "${SHADERS_DIR}/*.tesc"
-     "${SHADERS_DIR}/*.tese"
-     "${SHADERS_DIR}/*.geom"
-     "${SHADERS_DIR}/*.frag"
-     "${SHADERS_DIR}/*.comp")
+     "shaders/*.vert"
+     "shaders/*.tesc"
+     "shaders/*.tese"
+     "shaders/*.geom"
+     "shaders/*.frag"
+     "shaders/*.comp")
 
-find_package(bp REQUIRED)
-find_package(bpMulti REQUIRED)
-find_package(bpQt REQUIRED)
-find_package(bpScene REQUIRED)
-find_package(Boost REQUIRED
-	     COMPONENTS "program_options")
-
-include_directories(${BP_INCLUDE_DIRS}
-		    ${BP_MULTI_INCLUDE_DIRS}
-		    ${BP_QT_INCLUDE_DIRS}
-		    ${BP_SCENE_INCLUDE_DIRS}
-		    ${Boost_INCLUDE_DIRS})
+find_package(Boost REQUIRED COMPONENTS "program_options")
 
 add_executable(vmgpu ${SRC})
-target_link_libraries(vmgpu
-		      ${BP_LIBRARIES}
-		      ${BP_MULTI_LIBRARIES}
-		      ${BP_QT_LIBRARIES}
-		      ${BP_SCENE_LIBRARIES}
-		      ${Boost_LIBRARIES})
+target_include_directories(vmgpu PRIVATE ${Boost_INCLUDE_DIRS})
+target_link_libraries(vmgpu bp bpMulti bpQt bpScene ${Boost_LIBRARIES})
 
 find_program(GLSLANG_VALIDATOR glslangValidator)
 foreach(SHADER ${SHADERS})
