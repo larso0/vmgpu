@@ -17,11 +17,6 @@ public:
 		resourceManager.addEntity(meshId, node);
 	}
 
-	void updateClipTransform()
-	{
-		resourceManager.setClipTransform(getContributionClipTransform());
-	}
-
 	void render(bp::Framebuffer& fbo, VkCommandBuffer cmdBuffer) override;
 
 private:
@@ -30,6 +25,7 @@ private:
 
 	void setupSubpasses() override;
 	void initResources(uint32_t, uint32_t) override;
+	void updateClipTransform();
 };
 
 
