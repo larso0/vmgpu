@@ -29,13 +29,21 @@ void Vmgpu::initRenderResources(uint32_t width, uint32_t height)
 			if (selected.find(d) == selected.end()) selected.insert(d);
 		}
 
-		if (selected.size() < options.deviceCount)
+		if (selected.size() < options.deviceCount && !options.simulateMultiGPU)
 			qWarning() << options.deviceCount << " devices requested, but only "
 				   << selected.size() << " devices are available.";
 
 		selected.erase(device);
 		for (VkPhysicalDevice d : selected)
 			devices.emplace_back(new Device(d, requirements));
+
+		if (options.simulateMultiGPU)
+		{
+			unsigned deviceCount = static_cast<unsigned>(devices.size());
+			for (unsigned i = deviceCount; i < options.deviceCount; i++)
+				devices.emplace_back(new Device(*devices[i % deviceCount],
+								requirements));
+		}
 	}
 
 	qInfo() << "Loading \"" << options.objPath.c_str() << "\"...";

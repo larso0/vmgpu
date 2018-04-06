@@ -19,7 +19,8 @@ Options parseOptions(int argc, char** argv)
 		("borderless,b", "use borderless windows for compositing with sort-first method")
 		("file,f", po::value<string>(), "obj file to load 3D mesh from")
 		("count,c", po::value<uint32_t>()->default_value(2),
-		 "device count (how many devices/gpus to use)");
+		 "device count (how many devices/gpus to use)")
+		("simulate-mgpu", "Similate the use of more GPUs than available");
 	po::variables_map arguments;
 	po::store(po::parse_command_line(argc, argv, options), arguments);
 
@@ -28,6 +29,8 @@ Options parseOptions(int argc, char** argv)
 		cout << options << endl;
 		throw 1;
 	}
+
+	result.simulateMultiGPU = arguments.count("simulate-mgpu") > 0;
 
 	{
 		string res = arguments["resolution"].as<string>();
