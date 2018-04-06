@@ -17,7 +17,7 @@ void SFRenderer::setupSubpasses()
 void SFRenderer::initResources(uint32_t, uint32_t)
 {
 	resourceManager.init(getDevice(), getRenderPass(), *camera);
-	bpUtil::connect(contributionChangedEvent, *this, &updateClipTransform);
+	bpUtil::connect(contributionChangedEvent, *this, &SFRenderer::updateClipTransform);
 	updateClipTransform();
 }
 

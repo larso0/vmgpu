@@ -8,7 +8,7 @@ void ResourceManager::init(Device& device, RenderPass& renderPass, Camera& camer
 {
 	ResourceManager::device = &device;
 	ResourceManager::camera = &camera;
-	
+
 	auto vertexShaderCode = readBinaryFile("spv/basic.vert.spv");
 	vertexShader.init(device, VK_SHADER_STAGE_VERTEX_BIT,
 			  static_cast<uint32_t>(vertexShaderCode.size()),
@@ -33,10 +33,10 @@ void ResourceManager::init(Device& device, RenderPass& renderPass, Camera& camer
 	pipeline.init(device, renderPass, pipelineLayout);
 }
 
-unsigned ResourceManager::addMesh(Mesh& mesh)
+unsigned ResourceManager::addMesh(Mesh& mesh, uint32_t offset, uint32_t count)
 {
 	unsigned id = meshes.createResource();
-	meshes[id].init(*device, mesh);
+	meshes[id].init(*device, mesh, offset, count);
 	return id;
 }
 

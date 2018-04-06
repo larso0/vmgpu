@@ -52,7 +52,7 @@ void Vmgpu::initRenderResources(uint32_t width, uint32_t height)
 	{
 	case Strategy::Single:
 	case Strategy::SortFirst: initSortFirst(width, height); break;
-	//case Strategy::SortLast: initSortLast(width, height); break;
+	case Strategy::SortLast: initSortLast(width, height); break;
 	default: throw runtime_error("Unsupported strategy.");
 	}
 

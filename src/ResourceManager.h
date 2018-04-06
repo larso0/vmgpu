@@ -16,7 +16,8 @@ class ResourceManager
 {
 public:
 	void init(bp::Device& device, bp::RenderPass& renderPass, bpScene::Camera& camera);
-	unsigned addMesh(bpScene::Mesh& mesh);
+	unsigned addMesh(bpScene::Mesh& mesh, uint32_t offset, uint32_t count);
+	unsigned addMesh(bpScene::Mesh& mesh) { return addMesh(mesh, 0, mesh.getElementCount()); }
 	void addEntity(unsigned meshIndex, bpScene::Node& node);
 	void setClipTransform(const glm::mat4& transform);
 	void updatePushConstants();
