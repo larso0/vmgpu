@@ -2,6 +2,7 @@
 #define VMGPU_VMGPU_H
 
 #include "Options.h"
+#include "CameraController.h"
 #include <bp/Texture.h>
 #include <bp/Framebuffer.h>
 #include <bp/Renderer.h>
@@ -17,9 +18,12 @@ public:
 	Vmgpu(QVulkanInstance& instance, Options& options) :
 		bpQt::Window{instance},
 		options{options},
-		camera{&cameraNode}
+		camera{&cameraNode},
+		mouseButton{false},
+		rotate{false}
 	{
 		setContinuousRendering(true);
+		setVSync(true);
 	}
 
 private:
@@ -28,6 +32,11 @@ private:
 	bpScene::Camera camera;
 	bpScene::Node cameraNode;
 	bpScene::Node objectNode;
+
+	CameraController cameraController;
+	QPoint previousMousePos;
+	bool mouseButton;
+	bool rotate;
 
 	std::vector<std::shared_ptr<bp::Device>> devices;
 	std::vector<std::shared_ptr<bp::Renderer>> renderers;
@@ -43,6 +52,12 @@ private:
 	void specifyDeviceRequirements(bp::DeviceRequirements& requirements) override;
 	void render(VkCommandBuffer cmdBuffer) override;
 	void update(double frameDeltaTime) override;
+
+	void mousePressEvent(QMouseEvent* event) override;
+	void mouseReleaseEvent(QMouseEvent* event) override;
+	void mouseMoveEvent(QMouseEvent* event) override;
+	void keyPressEvent(QKeyEvent* event) override;
+	void keyReleaseEvent(QKeyEvent* event) override;
 };
 
 

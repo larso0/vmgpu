@@ -1,6 +1,8 @@
 #include "Vmgpu.h"
 #include <set>
 #include <stdexcept>
+#include <QMouseEvent>
+#include <QKeyEvent>
 
 using namespace bp;
 using namespace std;
@@ -52,8 +54,9 @@ void Vmgpu::initRenderResources(uint32_t width, uint32_t height)
 	cameraNode.update();
 	camera.setPerspectiveProjection(glm::radians(60.f),
 					static_cast<float>(width) / static_cast<float>(height),
-					0.1f, 100.f);
+					0.1f, 1000.f);
 	camera.update();
+	cameraController.setCameraNode(cameraNode);
 
 	qInfo() << "Initializing renderer...";
 	switch (options.strategy)
@@ -81,7 +84,7 @@ void Vmgpu::resizeRenderResources(uint32_t width, uint32_t height)
 	framebuffer.resize(width, height);
 	camera.setPerspectiveProjection(glm::radians(60.f),
 					static_cast<float>(width) / static_cast<float>(height),
-					0.1f, 100.f);
+					0.1f, 1000.f);
 }
 
 void Vmgpu::specifyDeviceRequirements(DeviceRequirements& requirements)
@@ -96,6 +99,77 @@ void Vmgpu::render(VkCommandBuffer cmdBuffer)
 
 void Vmgpu::update(double frameDeltaTime)
 {
-	objectNode.rotate(static_cast<float>(frameDeltaTime), {0.f, 1.f, 0.f});
-	objectNode.update();
+	cameraController.update(static_cast<float>(frameDeltaTime));
+	camera.update();
+	if (rotate)
+	{
+		objectNode.rotate(static_cast<float>(frameDeltaTime), {0.f, 1.f, 0.f});
+		objectNode.update();
+	}
+}
+
+void Vmgpu::mousePressEvent(QMouseEvent* event)
+{
+	if (event->button() == Qt::LeftButton)
+	{
+		mouseButton = true;
+		previousMousePos = event->globalPos();
+	}
+	QWindow::mousePressEvent(event);
+}
+
+void Vmgpu::mouseReleaseEvent(QMouseEvent* event)
+{
+	if (event->button() == Qt::LeftButton)
+	{
+		mouseButton = false;
+		QPoint delta = event->globalPos() - previousMousePos;
+		cameraController.motion(static_cast<float>(delta.x()),
+					static_cast<float>(delta.y()));
+		previousMousePos = event->globalPos();
+	}
+	QWindow::mouseReleaseEvent(event);
+}
+
+void Vmgpu::mouseMoveEvent(QMouseEvent* event)
+{
+	if (mouseButton)
+	{
+		QPoint delta = event->globalPos() - previousMousePos;
+		cameraController.motion(static_cast<float>(delta.x()),
+					static_cast<float>(delta.y()));
+		previousMousePos = event->globalPos();
+	}
+	QWindow::mouseMoveEvent(event);
+}
+
+void Vmgpu::keyPressEvent(QKeyEvent* event)
+{
+	switch (event->key())
+	{
+	case Qt::Key_Q: cameraController.setDownPressed(true); break;
+	case Qt::Key_W: cameraController.setForwardPressed(true); break;
+	case Qt::Key_E: cameraController.setUpPressed(true); break;
+	case Qt::Key_A: cameraController.setLeftPressed(true); break;
+	case Qt::Key_S: cameraController.setBackwardPressed(true); break;
+	case Qt::Key_D: cameraController.setRightPressed(true); break;
+	case Qt::Key_Space: rotate = !rotate;
+	default: break;
+	}
+	QWindow::keyPressEvent(event);
+}
+
+void Vmgpu::keyReleaseEvent(QKeyEvent* event)
+{
+	switch (event->key())
+	{
+	case Qt::Key_Q: cameraController.setDownPressed(false); break;
+	case Qt::Key_W: cameraController.setForwardPressed(false); break;
+	case Qt::Key_E: cameraController.setUpPressed(false); break;
+	case Qt::Key_A: cameraController.setLeftPressed(false); break;
+	case Qt::Key_S: cameraController.setBackwardPressed(false); break;
+	case Qt::Key_D: cameraController.setRightPressed(false); break;
+	default: break;
+	}
+	QWindow::keyReleaseEvent(event);
 }
