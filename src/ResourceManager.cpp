@@ -18,6 +18,13 @@ void ResourceManager::init(Device& device, RenderPass& renderPass, Camera& camer
 			    static_cast<uint32_t>(fragmentShaderCode.size()),
 			    reinterpret_cast<const uint32_t*>(fragmentShaderCode.data()));
 
+	descriptorSetLayout.addLayoutBinding({0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1,
+					      VK_SHADER_STAGE_FRAGMENT_BIT, nullptr});
+	descriptorSetLayout.addLayoutBinding({1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1,
+					      VK_SHADER_STAGE_FRAGMENT_BIT, nullptr});
+	descriptorSetLayout.init(device);
+
+	pipelineLayout.addDescriptorSetLayout(descriptorSetLayout);
 	pipelineLayout.addPushConstantRange({VK_SHADER_STAGE_VERTEX_BIT, 0,
 					     sizeof(PushConstantResource::Matrices)});
 	pipelineLayout.init(device);
@@ -33,18 +40,17 @@ void ResourceManager::init(Device& device, RenderPass& renderPass, Camera& camer
 	pipeline.init(device, renderPass, pipelineLayout);
 }
 
-unsigned ResourceManager::addMesh(Mesh& mesh, uint32_t offset, uint32_t count)
+unsigned ResourceManager::addModel(const Model& model)
 {
-	unsigned id = meshes.createResource();
-	meshes[id].init(*device, mesh, offset, count);
+	unsigned id = models.createResource();
+	models[id].init(*device, descriptorSetLayout, 0, 1, model);
 	return id;
 }
 
-void ResourceManager::addEntity(unsigned meshIndex, Node& node)
+void ResourceManager::addEntity(unsigned modelIndex, Node& node)
 {
 	unsigned drawableId = drawables.createResource();
-	drawables[drawableId].init(pipeline, meshes[meshIndex], 0,
-				   meshes[meshIndex].getElementCount());
+	drawables[drawableId].init(pipeline, models[modelIndex]);
 	unsigned pushId = pushConstants.createResource();
 	pushConstants[pushId].init(pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, node, *camera);
 	bpUtil::connect(drawables[drawableId].resourceBindingEvent, pushConstants[pushId],
