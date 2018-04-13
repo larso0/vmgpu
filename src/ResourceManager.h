@@ -34,12 +34,13 @@ private:
 	bpScene::Camera* camera;
 
 	bpScene::DrawableSubpass subpass;
-	bp::Shader vertexShader, fragmentShader;
-	bp::DescriptorSetLayout descriptorSetLayout;
-	bp::PipelineLayout pipelineLayout;
-	bp::GraphicsPipeline pipeline;
+	bp::Shader vertexBasic, vertexBasicUv, fragmentBasic, fragmentColored, fragmentTextured;
+	bp::DescriptorSetLayout setLayoutColored, setLayoutTextured;
+	bp::PipelineLayout pipelineLayoutBasic, pipelineLayoutColored, pipelineLayoutTextured;
+	bp::GraphicsPipeline pipelineBasic, pipelineColored, pipelineTextured;
 
 	bpScene::ResourceList<bpScene::ModelResources> models;
+	std::vector<bool> modelIsTextured;
 	bpScene::ResourceList<bpScene::ModelDrawable> modelDrawables;
 	bpScene::ResourceList<bpScene::MeshResources> meshes;
 	bpScene::ResourceList<bpScene::MeshDrawable> meshDrawables;

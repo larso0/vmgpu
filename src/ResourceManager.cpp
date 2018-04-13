@@ -9,41 +9,100 @@ void ResourceManager::init(Device& device, RenderPass& renderPass, Camera& camer
 	ResourceManager::device = &device;
 	ResourceManager::camera = &camera;
 
-	auto vertexShaderCode = readBinaryFile("spv/basic.vert.spv");
-	vertexShader.init(device, VK_SHADER_STAGE_VERTEX_BIT,
-			  static_cast<uint32_t>(vertexShaderCode.size()),
-			  reinterpret_cast<const uint32_t*>(vertexShaderCode.data()));
-	auto fragmentShaderCode = readBinaryFile("spv/basic.frag.spv");
-	fragmentShader.init(device, VK_SHADER_STAGE_FRAGMENT_BIT,
-			    static_cast<uint32_t>(fragmentShaderCode.size()),
-			    reinterpret_cast<const uint32_t*>(fragmentShaderCode.data()));
+	//Load shader byte code
+	auto shaderCode = readBinaryFile("spv/basic.vert.spv");
+	vertexBasic.init(device, VK_SHADER_STAGE_VERTEX_BIT,
+			 static_cast<uint32_t>(shaderCode.size()),
+			 reinterpret_cast<const uint32_t*>(shaderCode.data()));
 
-	descriptorSetLayout.addLayoutBinding({0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1,
+	shaderCode = readBinaryFile("spv/basicUv.vert.spv");
+	vertexBasicUv.init(device, VK_SHADER_STAGE_VERTEX_BIT,
+			   static_cast<uint32_t>(shaderCode.size()),
+			   reinterpret_cast<const uint32_t*>(shaderCode.data()));
+
+	shaderCode = readBinaryFile("spv/basic.frag.spv");
+	fragmentBasic.init(device, VK_SHADER_STAGE_FRAGMENT_BIT,
+			   static_cast<uint32_t>(shaderCode.size()),
+			   reinterpret_cast<const uint32_t*>(shaderCode.data()));
+
+	shaderCode = readBinaryFile("spv/material.frag.spv");
+	fragmentColored.init(device, VK_SHADER_STAGE_FRAGMENT_BIT,
+			     static_cast<uint32_t>(shaderCode.size()),
+			     reinterpret_cast<const uint32_t*>(shaderCode.data()));
+
+	shaderCode = readBinaryFile("spv/materialTextured.frag.spv");
+	fragmentTextured.init(device, VK_SHADER_STAGE_FRAGMENT_BIT,
+			      static_cast<uint32_t>(shaderCode.size()),
+			      reinterpret_cast<const uint32_t*>(shaderCode.data()));
+
+	//Setup descriptor set layouts
+	setLayoutColored.addLayoutBinding({0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1,
+					    VK_SHADER_STAGE_FRAGMENT_BIT, nullptr});
+	setLayoutColored.init(device);
+
+	setLayoutTextured.addLayoutBinding({0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1,
+					    VK_SHADER_STAGE_FRAGMENT_BIT, nullptr});
+	setLayoutTextured.addLayoutBinding({1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1,
 					      VK_SHADER_STAGE_FRAGMENT_BIT, nullptr});
-	descriptorSetLayout.addLayoutBinding({1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1,
-					      VK_SHADER_STAGE_FRAGMENT_BIT, nullptr});
-	descriptorSetLayout.init(device);
+	setLayoutTextured.init(device);
 
-	pipelineLayout.addDescriptorSetLayout(descriptorSetLayout);
-	pipelineLayout.addPushConstantRange({VK_SHADER_STAGE_VERTEX_BIT, 0,
-					     sizeof(PushConstantResource::Matrices)});
-	pipelineLayout.init(device);
+	//Setup pipeline layouts
+	pipelineLayoutBasic.addPushConstantRange({VK_SHADER_STAGE_VERTEX_BIT, 0,
+						  sizeof(PushConstantResource::Matrices)});
+	pipelineLayoutBasic.init(device);
 
-	pipeline.addShaderStageInfo(vertexShader.getPipelineShaderStageInfo());
-	pipeline.addShaderStageInfo(fragmentShader.getPipelineShaderStageInfo());
-	pipeline.addVertexBindingDescription({0, Vertex::STRIDE,
+	pipelineLayoutColored.addDescriptorSetLayout(setLayoutColored);
+	pipelineLayoutColored.addPushConstantRange({VK_SHADER_STAGE_VERTEX_BIT, 0,
+						    sizeof(PushConstantResource::Matrices)});
+	pipelineLayoutColored.init(device);
+
+	pipelineLayoutTextured.addDescriptorSetLayout(setLayoutTextured);
+	pipelineLayoutTextured.addPushConstantRange({VK_SHADER_STAGE_VERTEX_BIT, 0,
+						     sizeof(PushConstantResource::Matrices)});
+	pipelineLayoutTextured.init(device);
+	
+	//Setup pipelines
+	pipelineBasic.addShaderStageInfo(vertexBasic.getPipelineShaderStageInfo());
+	pipelineBasic.addShaderStageInfo(fragmentBasic.getPipelineShaderStageInfo());
+	pipelineBasic.addVertexBindingDescription({0, Vertex::STRIDE,
+						   VK_VERTEX_INPUT_RATE_VERTEX});
+	pipelineBasic.addVertexAttributeDescription({0, 0, VK_FORMAT_R32G32B32_SFLOAT,
+						     Vertex::POSITION_OFFSET});
+	pipelineBasic.addVertexAttributeDescription({1, 0, VK_FORMAT_R32G32B32_SFLOAT,
+						     Vertex::NORMAL_OFFSET});
+	pipelineBasic.init(device, renderPass, pipelineLayoutBasic);
+
+	pipelineColored.addShaderStageInfo(vertexBasic.getPipelineShaderStageInfo());
+	pipelineColored.addShaderStageInfo(fragmentColored.getPipelineShaderStageInfo());
+	pipelineColored.addVertexBindingDescription({0, Vertex::STRIDE,
+						     VK_VERTEX_INPUT_RATE_VERTEX});
+	pipelineColored.addVertexAttributeDescription({0, 0, VK_FORMAT_R32G32B32_SFLOAT,
+						       Vertex::POSITION_OFFSET});
+	pipelineColored.addVertexAttributeDescription({1, 0, VK_FORMAT_R32G32B32_SFLOAT,
+						       Vertex::NORMAL_OFFSET});
+	pipelineColored.init(device, renderPass, pipelineLayoutColored);
+
+	pipelineTextured.addShaderStageInfo(vertexBasicUv.getPipelineShaderStageInfo());
+	pipelineTextured.addShaderStageInfo(fragmentTextured.getPipelineShaderStageInfo());
+	pipelineTextured.addVertexBindingDescription({0, Vertex::STRIDE,
 						      VK_VERTEX_INPUT_RATE_VERTEX});
-	pipeline.addVertexAttributeDescription({0, 0, VK_FORMAT_R32G32B32_SFLOAT,
+	pipelineTextured.addVertexAttributeDescription({0, 0, VK_FORMAT_R32G32B32_SFLOAT,
 							Vertex::POSITION_OFFSET});
-	pipeline.addVertexAttributeDescription({1, 0, VK_FORMAT_R32G32B32_SFLOAT,
+	pipelineTextured.addVertexAttributeDescription({1, 0, VK_FORMAT_R32G32B32_SFLOAT,
 							Vertex::NORMAL_OFFSET});
-	pipeline.init(device, renderPass, pipelineLayout);
+	pipelineTextured.addVertexAttributeDescription({2, 0, VK_FORMAT_R32G32_SFLOAT,
+							Vertex::TEXTURE_COORDINATE_OFFSET});
+	pipelineTextured.init(device, renderPass, pipelineLayoutTextured);
 }
 
 unsigned ResourceManager::addModel(const Model& model)
 {
 	unsigned id = models.createResource();
-	models[id].init(*device, descriptorSetLayout, 0, 1, model);
+	DescriptorSetLayout* setLayout;
+	modelIsTextured.push_back(model.getMaterial(0).isTextured());
+	if (modelIsTextured[id]) setLayout = &setLayoutTextured;
+	else setLayout = &setLayoutColored;
+	models[id].init(*device, *setLayout, 0, 1, model);
 	return id;
 }
 
@@ -57,9 +116,14 @@ unsigned ResourceManager::addMesh(const bpScene::Mesh& mesh, uint32_t offset, ui
 void ResourceManager::addModelInstance(unsigned modelIndex, Node& node)
 {
 	unsigned drawableId = modelDrawables.createResource();
-	modelDrawables[drawableId].init(pipeline, models[modelIndex]);
+
+	modelDrawables[drawableId].init(modelIsTextured[modelIndex] ? pipelineTextured
+								    : pipelineColored,
+					models[modelIndex]);
 	unsigned pushId = pushConstants.createResource();
-	pushConstants[pushId].init(pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, node, *camera);
+	pushConstants[pushId].init(modelIsTextured[modelIndex] ? pipelineLayoutTextured
+							       : pipelineLayoutColored,
+				   VK_SHADER_STAGE_VERTEX_BIT, node, *camera);
 	bpUtil::connect(modelDrawables[drawableId].resourceBindingEvent, pushConstants[pushId],
 			&PushConstantResource::bind);
 	subpass.addDrawable(modelDrawables[drawableId]);
@@ -69,9 +133,10 @@ void ResourceManager::addMeshInstance(unsigned meshId, bpScene::Node& node)
 {
 	auto& mesh = meshes[meshId];
 	unsigned drawableId = meshDrawables.createResource();
-	meshDrawables[drawableId].init(pipeline, mesh, mesh.getOffset(), mesh.getElementCount());
+	meshDrawables[drawableId].init(pipelineBasic, mesh, mesh.getOffset(),
+				       mesh.getElementCount());
 	unsigned pushId = pushConstants.createResource();
-	pushConstants[pushId].init(pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, node, *camera);
+	pushConstants[pushId].init(pipelineLayoutBasic, VK_SHADER_STAGE_VERTEX_BIT, node, *camera);
 	bpUtil::connect(meshDrawables[drawableId].resourceBindingEvent, pushConstants[pushId],
 			&PushConstantResource::bind);
 	subpass.addDrawable(meshDrawables[drawableId]);
