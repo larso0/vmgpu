@@ -41,8 +41,10 @@ private:
 
 	bpScene::ResourceList<bpScene::ModelResources> models;
 	std::vector<bool> modelIsTextured;
+	std::vector<float> modelScale;
 	bpScene::ResourceList<bpScene::ModelDrawable> modelDrawables;
 	bpScene::ResourceList<bpScene::MeshResources> meshes;
+	std::vector<float> meshScale;
 	bpScene::ResourceList<bpScene::MeshDrawable> meshDrawables;
 	bpScene::ResourceList<bpScene::PushConstantResource> pushConstants;
 };
