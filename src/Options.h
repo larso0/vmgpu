@@ -8,7 +8,6 @@ enum class Strategy
 {
 	Single,
 	SortFirst,
-	SortFirstBorderlessWindowCompositing,
 	SortLast
 };
 
@@ -16,6 +15,7 @@ struct Options
 {
 	Strategy strategy;
 	bool simulateMultiGPU;
+	bool basic;
 	std::string objPath;
 	uint32_t width, height;
 	uint32_t deviceCount;

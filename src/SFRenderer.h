@@ -11,14 +11,8 @@ public:
 	SFRenderer() : camera{nullptr} {}
 
 	void setCamera(bpScene::Camera& camera) { SFRenderer::camera = &camera; }
-	unsigned addMesh(bpScene::Mesh& mesh) { resourceManager.addMesh(mesh); }
-	void addEntity(unsigned meshId, bpScene::Node& node)
-	{
-		resourceManager.addMeshInstance(meshId, node);
-	}
-
 	void render(bp::Framebuffer& fbo, VkCommandBuffer cmdBuffer) override;
-
+	ResourceManager& getResourceManager() { return resourceManager; }
 private:
 	bpScene::Camera* camera;
 	ResourceManager resourceManager;

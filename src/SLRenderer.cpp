@@ -1,11 +1,5 @@
 #include "SLRenderer.h"
 
-unsigned SLRenderer::addMesh(bpScene::Mesh& mesh, uint32_t offset, uint32_t count)
-{
-	resourceManager.addMesh(mesh, offset, count);
-}
-
-
 void SLRenderer::render(bp::Framebuffer& fbo, VkCommandBuffer cmdBuffer)
 {
 	resourceManager.updatePushConstants();

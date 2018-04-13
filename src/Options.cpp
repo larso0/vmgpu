@@ -16,11 +16,11 @@ Options parseOptions(int argc, char** argv)
 		 "resolution of window: <width>x<height>")
 		("strategy,s", po::value<string>()->default_value("single"),
 		 "strategy for rendering: single, sort-first, or sort-last")
-		("borderless,b", "use borderless windows for compositing with sort-first method")
-		("file,f", po::value<string>(), "obj file to load 3D mesh from")
+		("file,f", po::value<string>(), "obj file to load 3D model from")
 		("count,c", po::value<uint32_t>()->default_value(2),
 		 "device count (how many devices/gpus to use)")
-		("simulate-mgpu", "Similate the use of more GPUs than available");
+		("simulate-mgpu", "Similate the use of more GPUs than available")
+		("basic,b", "Use basic rendering of mesh (will not load materials)");
 	po::variables_map arguments;
 	po::store(po::parse_command_line(argc, argv, options), arguments);
 
@@ -30,6 +30,7 @@ Options parseOptions(int argc, char** argv)
 		throw 1;
 	}
 
+	result.basic = arguments.count("basic") > 0;
 	result.simulateMultiGPU = arguments.count("simulate-mgpu") > 0;
 
 	{
@@ -49,16 +50,14 @@ Options parseOptions(int argc, char** argv)
 		if (strategy == "single") result.strategy = Strategy::Single;
 		else if (strategy == "sort-first")
 		{
-			if (arguments.count("borderless"))
-				result.strategy = Strategy::SortFirstBorderlessWindowCompositing;
-			else
-				result.strategy = Strategy::SortFirst;
+			result.strategy = Strategy::SortFirst;
 		} else if (strategy == "sort-last")
 		{
 			result.strategy = Strategy::SortLast;
 		} else
 		{
-			cerr << "Unknown rendering strategy, using single as fallback strategy." << endl;
+			cerr << "Unknown rendering strategy, using single as fallback strategy."
+			     << endl;
 			result.strategy = Strategy::Single;
 		}
 	}

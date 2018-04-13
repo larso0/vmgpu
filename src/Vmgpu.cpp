@@ -49,7 +49,7 @@ void Vmgpu::initRenderResources(uint32_t width, uint32_t height)
 	}
 
 	qInfo() << "Loading \"" << options.objPath.c_str() << "\"...";
-	mesh.loadObj(options.objPath);
+	scene.load(options);
 	cameraNode.translate(0.f, 0.f, 2.f);
 	cameraNode.update();
 	camera.setPerspectiveProjection(glm::radians(60.f),
@@ -64,7 +64,6 @@ void Vmgpu::initRenderResources(uint32_t width, uint32_t height)
 	case Strategy::Single:
 	case Strategy::SortFirst: initSortFirst(width, height); break;
 	case Strategy::SortLast: initSortLast(width, height); break;
-	default: throw runtime_error("Unsupported strategy.");
 	}
 
 	depthAttachment.init(device, VK_FORMAT_D16_UNORM,
@@ -103,8 +102,8 @@ void Vmgpu::update(double frameDeltaTime)
 	camera.update();
 	if (rotate)
 	{
-		objectNode.rotate(static_cast<float>(frameDeltaTime), {0.f, 1.f, 0.f});
-		objectNode.update();
+		scene.node.rotate(static_cast<float>(frameDeltaTime), {0.f, 1.f, 0.f});
+		scene.node.update();
 	}
 }
 

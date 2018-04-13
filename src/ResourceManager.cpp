@@ -102,7 +102,7 @@ unsigned ResourceManager::addModel(const Model& model)
 	modelIsTextured.push_back(model.getMaterial(0).isTextured());
 	if (modelIsTextured[id]) setLayout = &setLayoutTextured;
 	else setLayout = &setLayoutColored;
-	models[id].init(*device, *setLayout, 0, 1, model);
+	models[id].init(*device, *setLayout, 1, 0, model);
 	return id;
 }
 

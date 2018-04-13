@@ -11,14 +11,8 @@ public:
 	SLRenderer() : camera{nullptr} {}
 
 	void setCamera(bpScene::Camera& camera) { SLRenderer::camera = &camera; }
-	unsigned addMesh(bpScene::Mesh& mesh, uint32_t offset, uint32_t count);
-	void addEntity(unsigned meshId, bpScene::Node& node)
-	{
-		resourceManager.addMeshInstance(meshId, node);
-	}
-
 	void render(bp::Framebuffer& fbo, VkCommandBuffer cmdBuffer) override;
-
+	ResourceManager& getResourceManager() { return resourceManager; }
 	void increaseWorkload(float) override {}
 	void decreaseWorkload(float) override {}
 

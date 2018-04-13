@@ -2,6 +2,7 @@
 #define VMGPU_VMGPU_H
 
 #include "Options.h"
+#include "Scene.h"
 #include "CameraController.h"
 #include <bp/Texture.h>
 #include <bp/Framebuffer.h>
@@ -28,12 +29,11 @@ public:
 
 private:
 	Options& options;
-	bpScene::Mesh mesh;
+
 	bpScene::Camera camera;
 	bpScene::Node cameraNode;
-	bpScene::Node objectNode;
-
 	CameraController cameraController;
+	Scene scene;
 	QPoint previousMousePos;
 	bool mouseButton;
 	bool rotate;

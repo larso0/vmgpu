@@ -31,7 +31,15 @@ void Vmgpu::initSortFirst(uint32_t width, uint32_t height)
 	for (auto& r : renderers)
 	{
 		auto renderer = static_pointer_cast<SFRenderer>(r);
-		unsigned meshId = renderer->addMesh(mesh);
-		renderer->addEntity(meshId, objectNode);
+		auto& rm = renderer->getResourceManager();
+		if (options.basic)
+		{
+			unsigned meshId = rm.addMesh(scene.mesh);
+			rm.addMeshInstance(meshId, scene.node);
+		} else
+		{
+			unsigned modelId = rm.addModel(scene.model);
+			rm.addModelInstance(modelId, scene.node);
+		}
 	}
 }
