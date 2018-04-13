@@ -14,5 +14,6 @@ layout (set = 0, binding = 1) uniform sampler2D m_sampler;
 void main()
 {
 	float intensity = clamp(dot(normalize(vec3(-1.0, 1.0, 1.0)), f_normal), 0, 1);
-	color = max(material.ambient, material.diffuse * texture(m_sampler, f_uv) * intensity).xyz;
+	color = max(material.ambient, material.diffuse * intensity).xyz
+		* texture(m_sampler, f_uv).xyz;
 }
