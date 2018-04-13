@@ -14,7 +14,7 @@ public:
 	unsigned addMesh(bpScene::Mesh& mesh, uint32_t offset, uint32_t count);
 	void addEntity(unsigned meshId, bpScene::Node& node)
 	{
-		resourceManager.addEntity(meshId, node);
+		resourceManager.addMeshInstance(meshId, node);
 	}
 
 	void render(bp::Framebuffer& fbo, VkCommandBuffer cmdBuffer) override;

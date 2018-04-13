@@ -21,13 +21,15 @@ void Vmgpu::initSortLast(uint32_t width, uint32_t height)
 	compositor->init(move(configurations), swapchain.getFormat(), width, height);
 	mainRenderer.reset(compositor);
 
-	uint32_t count = mesh.getElementCount() / devices.size();
+	uint32_t count = static_cast<uint32_t>(mesh.getElementCount() / devices.size());
 	count -= count % 3;
-	uint32_t leftover = mesh.getElementCount() - count * devices.size();
+	uint32_t leftover = static_cast<uint32_t>(mesh.getElementCount() - count * devices.size());
 	for (unsigned i = 0; i < devices.size(); i++)
 	{
 		auto renderer = static_pointer_cast<SLRenderer>(renderers[i]);
-		unsigned meshId = renderer->addMesh(mesh, i * count, i == devices.size() - 1 ? count + leftover : count);
+		unsigned meshId = renderer->addMesh(mesh, i * count,
+						    i == devices.size() - 1 ? count + leftover
+									    : count);
 		renderer->addEntity(meshId, objectNode);
 	}
 }

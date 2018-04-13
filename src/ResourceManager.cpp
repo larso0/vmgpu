@@ -47,15 +47,34 @@ unsigned ResourceManager::addModel(const Model& model)
 	return id;
 }
 
-void ResourceManager::addEntity(unsigned modelIndex, Node& node)
+unsigned ResourceManager::addMesh(const bpScene::Mesh& mesh, uint32_t offset, uint32_t count)
 {
-	unsigned drawableId = drawables.createResource();
-	drawables[drawableId].init(pipeline, models[modelIndex]);
+	unsigned id = meshes.createResource();
+	meshes[id].init(*device, mesh, offset, count);
+	return id;
+}
+
+void ResourceManager::addModelInstance(unsigned modelIndex, Node& node)
+{
+	unsigned drawableId = modelDrawables.createResource();
+	modelDrawables[drawableId].init(pipeline, models[modelIndex]);
 	unsigned pushId = pushConstants.createResource();
 	pushConstants[pushId].init(pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, node, *camera);
-	bpUtil::connect(drawables[drawableId].resourceBindingEvent, pushConstants[pushId],
+	bpUtil::connect(modelDrawables[drawableId].resourceBindingEvent, pushConstants[pushId],
 			&PushConstantResource::bind);
-	subpass.addDrawable(drawables[drawableId]);
+	subpass.addDrawable(modelDrawables[drawableId]);
+}
+
+void ResourceManager::addMeshInstance(unsigned meshId, bpScene::Node& node)
+{
+	auto& mesh = meshes[meshId];
+	unsigned drawableId = meshDrawables.createResource();
+	meshDrawables[drawableId].init(pipeline, mesh, mesh.getOffset(), mesh.getElementCount());
+	unsigned pushId = pushConstants.createResource();
+	pushConstants[pushId].init(pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, node, *camera);
+	bpUtil::connect(meshDrawables[drawableId].resourceBindingEvent, pushConstants[pushId],
+			&PushConstantResource::bind);
+	subpass.addDrawable(meshDrawables[drawableId]);
 }
 
 void ResourceManager::setClipTransform(const glm::mat4& transform)

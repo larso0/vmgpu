@@ -10,6 +10,7 @@
 #include <bpScene/DrawableSubpass.h>
 #include <bpScene/ModelResources.h>
 #include <bpScene/ModelDrawable.h>
+#include <bpScene/MeshDrawable.h>
 #include <bpScene/PushConstantResource.h>
 
 class ResourceManager
@@ -17,7 +18,13 @@ class ResourceManager
 public:
 	void init(bp::Device& device, bp::RenderPass& renderPass, bpScene::Camera& camera);
 	unsigned addModel(const bpScene::Model& model);
-	void addEntity(unsigned modelIndex, bpScene::Node& node);
+	unsigned addMesh(const bpScene::Mesh& mesh, uint32_t offset, uint32_t count);
+	unsigned addMesh(const bpScene::Mesh& mesh)
+	{
+		return addMesh(mesh, 0, mesh.getElementCount());
+	}
+	void addModelInstance(unsigned modelIndex, bpScene::Node& node);
+	void addMeshInstance(unsigned meshId, bpScene::Node& node);
 	void setClipTransform(const glm::mat4& transform);
 	void updatePushConstants();
 
@@ -33,7 +40,9 @@ private:
 	bp::GraphicsPipeline pipeline;
 
 	bpScene::ResourceList<bpScene::ModelResources> models;
-	bpScene::ResourceList<bpScene::ModelDrawable> drawables;
+	bpScene::ResourceList<bpScene::ModelDrawable> modelDrawables;
+	bpScene::ResourceList<bpScene::MeshResources> meshes;
+	bpScene::ResourceList<bpScene::MeshDrawable> meshDrawables;
 	bpScene::ResourceList<bpScene::PushConstantResource> pushConstants;
 };
 
