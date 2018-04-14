@@ -101,7 +101,7 @@ unsigned ResourceManager::addModel(const Model& model)
 	unsigned id = models.createResource();
 	DescriptorSetLayout* setLayout;
 	modelIsTextured.push_back(model.getMaterial(0).isTextured());
-	modelScale.push_back(glm::compMax(model.getSize()));
+	modelScale.push_back(1.f / glm::compMax(model.getSize()));
 	if (modelIsTextured[id]) setLayout = &setLayoutTextured;
 	else setLayout = &setLayoutColored;
 	models[id].init(*device, *setLayout, 1, 0, model);
