@@ -11,8 +11,8 @@ class Scene
 public:
 	void load(Options& options);
 
-	bpScene::Mesh mesh;
-	bpScene::Model model;
+	std::vector<bpScene::Mesh> meshes;
+	std::vector<bpScene::Model> models;
 	bpScene::Node node;
 };
 

@@ -16,11 +16,12 @@ Options parseOptions(int argc, char** argv)
 		 "resolution of window: <width>x<height>")
 		("strategy,s", po::value<string>()->default_value("single"),
 		 "strategy for rendering: single, sort-first, or sort-last")
-		("file,f", po::value<string>(), "obj file to load 3D model from")
+		("list,l", "specifies that the passed file is a list of obj files to load")
+		("file,f", po::value<string>(), "file to load")
 		("count,c", po::value<uint32_t>()->default_value(2),
 		 "device count (how many devices/gpus to use)")
-		("simulate-mgpu", "Similate the use of more GPUs than available")
-		("basic,b", "Use basic rendering of mesh (will not load materials)");
+		("simulate-mgpu", "similate the use of more GPUs than available")
+		("basic,b", "use basic rendering of mesh (will not load materials)");
 	po::variables_map arguments;
 	po::store(po::parse_command_line(argc, argv, options), arguments);
 
@@ -32,6 +33,7 @@ Options parseOptions(int argc, char** argv)
 
 	result.basic = arguments.count("basic") > 0;
 	result.simulateMultiGPU = arguments.count("simulate-mgpu") > 0;
+	result.objList = arguments.count("list") > 0;
 
 	{
 		string res = arguments["resolution"].as<string>();
@@ -75,7 +77,7 @@ Options parseOptions(int argc, char** argv)
 		result.objPath = arguments["file"].as<string>();
 	} else
 	{
-		cerr << "Can't load mesh, no obj file was specified.\n";
+		cerr << "No file was specified.\n";
 		cout << options << endl;
 		throw 2;
 	}

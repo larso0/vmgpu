@@ -1,6 +1,7 @@
 #include "Vmgpu.h"
 #include <set>
 #include <stdexcept>
+#include <iostream>
 #include <QMouseEvent>
 #include <QKeyEvent>
 
@@ -48,7 +49,7 @@ void Vmgpu::initRenderResources(uint32_t width, uint32_t height)
 		}
 	}
 
-	qInfo() << "Loading \"" << options.objPath.c_str() << "\"...";
+	cout << "Loading \"" << options.objPath.c_str() << "\"..." << endl;
 	scene.load(options);
 	cameraNode.translate(0.f, 0.f, 2.f);
 	cameraNode.update();
@@ -58,7 +59,7 @@ void Vmgpu::initRenderResources(uint32_t width, uint32_t height)
 	camera.update();
 	cameraController.setCameraNode(cameraNode);
 
-	qInfo() << "Initializing renderer...";
+	cout << "Initializing renderer..." << endl;
 	switch (options.strategy)
 	{
 	case Strategy::Single:
@@ -73,7 +74,7 @@ void Vmgpu::initRenderResources(uint32_t width, uint32_t height)
 	framebuffer.setAttachment(mainRenderer->getDepthAttachmentSlot(), depthAttachment);
 	framebuffer.init(mainRenderer->getRenderPass(), width, height);
 
-	qInfo() << "Rendering...";
+	cout << "Rendering..." << endl;
 }
 
 void Vmgpu::resizeRenderResources(uint32_t width, uint32_t height)

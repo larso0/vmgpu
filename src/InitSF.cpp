@@ -34,12 +34,18 @@ void Vmgpu::initSortFirst(uint32_t width, uint32_t height)
 		auto& rm = renderer->getResourceManager();
 		if (options.basic)
 		{
-			unsigned meshId = rm.addMesh(scene.mesh);
-			rm.addMeshInstance(meshId, scene.node);
+			for (const auto& mesh : scene.meshes)
+			{
+				unsigned meshId = rm.addMesh(mesh);
+				rm.addMeshInstance(meshId, scene.node);
+			}
 		} else
 		{
-			unsigned modelId = rm.addModel(scene.model);
-			rm.addModelInstance(modelId, scene.node);
+			for (const auto& model : scene.models)
+			{
+				unsigned modelId = rm.addModel(model);
+				rm.addModelInstance(modelId, scene.node);
+			}
 		}
 	}
 }

@@ -16,6 +16,7 @@ struct Options
 	Strategy strategy;
 	bool simulateMultiGPU;
 	bool basic;
+	bool objList;
 	std::string objPath;
 	uint32_t width, height;
 	uint32_t deviceCount;
