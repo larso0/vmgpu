@@ -16,6 +16,11 @@
 class ResourceManager
 {
 public:
+	ResourceManager() :
+		device{nullptr},
+		camera{nullptr},
+		scale{0.f} {}
+
 	void init(bp::Device& device, bp::RenderPass& renderPass, bpScene::Camera& camera);
 	unsigned addModel(const bpScene::Model& model);
 	unsigned addMesh(const bpScene::Mesh& mesh, uint32_t offset, uint32_t count);
@@ -41,12 +46,12 @@ private:
 
 	bpScene::ResourceList<bpScene::ModelResources> models;
 	std::vector<bool> modelIsTextured;
-	std::vector<float> modelScale;
 	bpScene::ResourceList<bpScene::ModelDrawable> modelDrawables;
 	bpScene::ResourceList<bpScene::MeshResources> meshes;
-	std::vector<float> meshScale;
 	bpScene::ResourceList<bpScene::MeshDrawable> meshDrawables;
 	bpScene::ResourceList<bpScene::PushConstantResource> pushConstants;
+
+	float scale;
 };
 
 
