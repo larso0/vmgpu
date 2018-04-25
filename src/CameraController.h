@@ -17,6 +17,7 @@ public:
 	void setCameraNode(bpScene::Node& node) { CameraController::node = &node; }
 	void update(float delta);
 	void motion(float yaw, float pitch);
+	void setSpeed(float s) { speed = s; }
 	bool isForwardPressed() const { return forwardPressed; }
 	void setForwardPressed(bool fw) { forwardPressed = fw; }
 	bool isBackwardPressed() const { return backwardPressed; }

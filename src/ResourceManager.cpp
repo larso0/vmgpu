@@ -101,8 +101,6 @@ unsigned ResourceManager::addModel(const Model& model)
 	unsigned id = models.createResource();
 	DescriptorSetLayout* setLayout;
 	modelIsTextured.push_back(model.getMaterial(0).isTextured());
-	float modelScale = 1.f / glm::compMax(model.getSize());
-	if (modelScale > scale) scale = modelScale;
 	if (modelIsTextured[id]) setLayout = &setLayoutTextured;
 	else setLayout = &setLayoutColored;
 	models[id].init(*device, *setLayout, 1, 0, model);
@@ -113,8 +111,6 @@ unsigned ResourceManager::addMesh(const bpScene::Mesh& mesh, uint32_t offset, ui
 {
 	unsigned id = meshes.createResource();
 	meshes[id].init(*device, mesh, offset, count);
-	float meshScale = 1.f / glm::compMax(mesh.getMaxVertex() - mesh.getMinVertex());
-	if (meshScale > scale) scale = meshScale;
 	return id;
 }
 
@@ -129,7 +125,6 @@ void ResourceManager::addModelInstance(unsigned modelIndex, Node& node)
 	pushConstants[pushId].init(modelIsTextured[modelIndex] ? pipelineLayoutTextured
 							       : pipelineLayoutColored,
 				   VK_SHADER_STAGE_VERTEX_BIT, node, *camera);
-	pushConstants[pushId].setScaleTransform(glm::scale(glm::mat4{}, {scale, scale, scale}));
 	bpUtil::connect(modelDrawables[drawableId].resourceBindingEvent, pushConstants[pushId],
 			&PushConstantResource::bind);
 	subpass.addDrawable(modelDrawables[drawableId]);
@@ -143,7 +138,6 @@ void ResourceManager::addMeshInstance(unsigned meshId, bpScene::Node& node)
 				       mesh.getElementCount());
 	unsigned pushId = pushConstants.createResource();
 	pushConstants[pushId].init(pipelineLayoutBasic, VK_SHADER_STAGE_VERTEX_BIT, node, *camera);
-	pushConstants[pushId].setScaleTransform(glm::scale(glm::mat4{}, {scale, scale, scale}));
 	bpUtil::connect(meshDrawables[drawableId].resourceBindingEvent, pushConstants[pushId],
 			&PushConstantResource::bind);
 	subpass.addDrawable(meshDrawables[drawableId]);

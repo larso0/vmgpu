@@ -21,7 +21,9 @@ Options parseOptions(int argc, char** argv)
 		("count,c", po::value<uint32_t>()->default_value(2),
 		 "device count (how many devices/gpus to use)")
 		("simulate-mgpu", "similate the use of more GPUs than available")
-		("basic,b", "use basic rendering of mesh (will not load materials)");
+		("basic,b", "use basic rendering of mesh (will not load materials)")
+		("z-up",
+		 "rotate the mesh(es) 90 degrees such that z axis meshes will be draw correctly");
 	po::variables_map arguments;
 	po::store(po::parse_command_line(argc, argv, options), arguments);
 
@@ -32,6 +34,7 @@ Options parseOptions(int argc, char** argv)
 	}
 
 	result.basic = arguments.count("basic") > 0;
+	result.zUp = arguments.count("z-up") > 0;
 	result.simulateMultiGPU = arguments.count("simulate-mgpu") > 0;
 	result.objList = arguments.count("list") > 0;
 

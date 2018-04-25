@@ -18,8 +18,7 @@ class ResourceManager
 public:
 	ResourceManager() :
 		device{nullptr},
-		camera{nullptr},
-		scale{0.f} {}
+		camera{nullptr} {}
 
 	void init(bp::Device& device, bp::RenderPass& renderPass, bpScene::Camera& camera);
 	unsigned addModel(const bpScene::Model& model);
@@ -50,8 +49,6 @@ private:
 	bpScene::ResourceList<bpScene::MeshResources> meshes;
 	bpScene::ResourceList<bpScene::MeshDrawable> meshDrawables;
 	bpScene::ResourceList<bpScene::PushConstantResource> pushConstants;
-
-	float scale;
 };
 
 

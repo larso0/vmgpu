@@ -4,6 +4,7 @@
 #include <iostream>
 #include <QMouseEvent>
 #include <QKeyEvent>
+#include <glm/gtx/component_wise.hpp>
 
 using namespace bp;
 using namespace std;
@@ -51,13 +52,17 @@ void Vmgpu::initRenderResources(uint32_t width, uint32_t height)
 
 	cout << "Loading \"" << options.objPath.c_str() << "\"..." << endl;
 	scene.load(options);
-	cameraNode.translate(0.f, 0.f, 2.f);
-	cameraNode.update();
+	float sceneSize = glm::compMax(scene.maxVertex - scene.minVertex);
+	cameraFar = sceneSize * 3.f;
+	cameraNode.translate(0.f, 0.f, scene.maxVertex.z * 3.f);
 	camera.setPerspectiveProjection(glm::radians(60.f),
 					static_cast<float>(width) / static_cast<float>(height),
-					0.1f, 1000.f);
-	camera.update();
+					0.1f, cameraFar);
 	cameraController.setCameraNode(cameraNode);
+	cameraController.setSpeed(sceneSize / 2.f);
+	cameraController.update(0.f);
+	cameraNode.update();
+	camera.update();
 
 	cout << "Initializing renderer..." << endl;
 	switch (options.strategy)
@@ -84,7 +89,7 @@ void Vmgpu::resizeRenderResources(uint32_t width, uint32_t height)
 	framebuffer.resize(width, height);
 	camera.setPerspectiveProjection(glm::radians(60.f),
 					static_cast<float>(width) / static_cast<float>(height),
-					0.1f, 1000.f);
+					0.1f, cameraFar);
 }
 
 void Vmgpu::specifyDeviceRequirements(DeviceRequirements& requirements)
@@ -103,8 +108,8 @@ void Vmgpu::update(double frameDeltaTime)
 	camera.update();
 	if (rotate)
 	{
-		scene.node.rotate(static_cast<float>(frameDeltaTime), {0.f, 1.f, 0.f});
-		scene.node.update();
+		scene.root.rotate(static_cast<float>(frameDeltaTime), {0.f, 1.f, 0.f});
+		scene.root.update();
 	}
 }
 

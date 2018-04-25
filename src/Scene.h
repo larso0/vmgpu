@@ -13,7 +13,9 @@ public:
 
 	std::vector<bpScene::Mesh> meshes;
 	std::vector<bpScene::Model> models;
-	bpScene::Node node;
+	bpScene::Node root;
+	bpScene::Node node{&root};
+	glm::vec3 minVertex, maxVertex;
 };
 
 #endif

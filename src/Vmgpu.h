@@ -20,6 +20,7 @@ public:
 		bpQt::Window{instance},
 		options{options},
 		camera{&cameraNode},
+		cameraFar{100.f},
 		mouseButton{false},
 		rotate{false}
 	{
@@ -33,6 +34,7 @@ private:
 	bpScene::Camera camera;
 	bpScene::Node cameraNode;
 	CameraController cameraController;
+	float cameraFar;
 	Scene scene;
 	QPoint previousMousePos;
 	bool mouseButton;

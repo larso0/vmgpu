@@ -25,6 +25,14 @@ void Scene::load(Options& options)
 		for (auto i = 0; i < filesNames.size(); i++)
 		{
 			meshes[i].loadObj(filesNames[i]);
+			const auto& minV = meshes[i].getMinVertex();
+			const auto& maxV = meshes[i].getMaxVertex();
+			if (minV.x < minVertex.x) minVertex.x = minV.x;
+			if (maxV.x > maxVertex.x) maxVertex.x = maxV.x;
+			if (minV.y < minVertex.y) minVertex.y = minV.y;
+			if (maxV.y > maxVertex.y) maxVertex.y = maxV.y;
+			if (minV.z < minVertex.z) minVertex.z = minV.z;
+			if (maxV.z > maxVertex.z) maxVertex.z = maxV.z;
 		}
 	} else
 	{
@@ -32,6 +40,20 @@ void Scene::load(Options& options)
 		for (auto i = 0; i < filesNames.size(); i++)
 		{
 			models[i].loadObj(filesNames[i]);
+			const auto& minV = models[i].getMinVertex();
+			const auto& maxV = models[i].getMaxVertex();
+			if (minV.x < minVertex.x) minVertex.x = minV.x;
+			if (maxV.x > maxVertex.x) maxVertex.x = maxV.x;
+			if (minV.y < minVertex.y) minVertex.y = minV.y;
+			if (maxV.y > maxVertex.y) maxVertex.y = maxV.y;
+			if (minV.z < minVertex.z) minVertex.z = minV.z;
+			if (maxV.z > maxVertex.z) maxVertex.z = maxV.z;
 		}
+	}
+
+	if (options.zUp)
+	{
+		node.rotate(glm::radians(-90.f), {1.f, 0.f, 0.f});
+		node.update();
 	}
 }

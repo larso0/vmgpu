@@ -3,6 +3,7 @@
 
 #include <string>
 #include <cstdint>
+#include <bpScene/Math.h>
 
 enum class Strategy
 {
@@ -16,6 +17,7 @@ struct Options
 	Strategy strategy;
 	bool simulateMultiGPU;
 	bool basic;
+	bool zUp;
 	bool objList;
 	std::string objPath;
 	uint32_t width, height;
