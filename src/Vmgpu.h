@@ -10,6 +10,7 @@
 #include <bpQt/Window.h>
 #include <bpScene/Mesh.h>
 #include <bpScene/Camera.h>
+#include <bpUtil/Event.h>
 #include <vector>
 #include <memory>
 
@@ -27,6 +28,8 @@ public:
 		setContinuousRendering(true);
 		setVSync(true);
 	}
+
+	bpUtil::Event<const std::string&> loadMessageEvent;
 
 private:
 	Options& options;

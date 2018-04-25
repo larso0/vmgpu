@@ -8,6 +8,7 @@ using namespace std;
 
 void Vmgpu::initSortLast(uint32_t width, uint32_t height)
 {
+	loadMessageEvent("Initializing renderers...");
 	vector<pair<Device*, SortLastRenderer*>> configurations;
 	for (auto& device : devices)
 	{
@@ -19,6 +20,7 @@ void Vmgpu::initSortLast(uint32_t width, uint32_t height)
 
 	if (devices.size() > 1)
 	{
+		loadMessageEvent("Initializing sort-last compositor...");
 		SortLastCompositor* compositor = new SortLastCompositor();
 		compositor->init(move(configurations), swapchain.getFormat(), width, height);
 		mainRenderer.reset(compositor);
@@ -26,6 +28,12 @@ void Vmgpu::initSortLast(uint32_t width, uint32_t height)
 	{
 		mainRenderer = renderers[0];
 		mainRenderer->init(device, swapchain.getFormat(), width, height);
+	}
+
+	for (auto& r : renderers)
+	{
+		auto& rm = static_pointer_cast<SLRenderer>(r)->getResourceManager();
+		bpUtil::connect(rm.loadMessageEvent, loadMessageEvent);
 	}
 
 	if (options.objList && options.basic && scene.meshes.size() >= options.deviceCount)

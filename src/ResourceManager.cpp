@@ -99,6 +99,7 @@ void ResourceManager::init(Device& device, RenderPass& renderPass, Camera& camer
 unsigned ResourceManager::addModel(const Model& model)
 {
 	unsigned id = models.createResource();
+	bpUtil::connect(models[id].loadMessageEvent, loadMessageEvent);
 	DescriptorSetLayout* setLayout;
 	modelIsTextured.push_back(model.getMaterial(0).isTextured());
 	if (modelIsTextured[id]) setLayout = &setLayoutTextured;

@@ -4,7 +4,9 @@
 #include <QVulkanInstance>
 #include <QLoggingCategory>
 #include <bpScene/Mesh.h>
+#include <iostream>
 
+using namespace std;
 using bpScene::Mesh;
 
 int main(int argc, char** argv)
@@ -25,6 +27,9 @@ int main(int argc, char** argv)
 		qFatal("Failed to create instance.");
 
 	Vmgpu vmgpu{instance, options};
+	bpUtil::connect(vmgpu.loadMessageEvent, [](const string& msg){
+		cout << msg << endl;
+	});
 	vmgpu.resize(options.width, options.height);
 	vmgpu.show();
 

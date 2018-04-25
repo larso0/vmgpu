@@ -12,6 +12,7 @@
 #include <bpScene/ModelDrawable.h>
 #include <bpScene/MeshDrawable.h>
 #include <bpScene/PushConstantResource.h>
+#include <bpUtil/Event.h>
 
 class ResourceManager
 {
@@ -33,6 +34,9 @@ public:
 	void updatePushConstants();
 
 	bp::Subpass& getSubpass() { return subpass; }
+
+	bpUtil::Event<const std::string&> loadMessageEvent;
+
 private:
 	bp::Device* device;
 	bpScene::Camera* camera;

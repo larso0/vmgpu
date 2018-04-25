@@ -50,7 +50,15 @@ void Vmgpu::initRenderResources(uint32_t width, uint32_t height)
 		}
 	}
 
-	cout << "Loading \"" << options.objPath.c_str() << "\"..." << endl;
+	cout << "GPUs:" << endl;
+	for (unsigned i = 0; i < devices.size(); i++)
+	{
+		const auto& props = devices[i]->getProperties();
+		cout << "GPU" << i << ": " << props.deviceName << '[' << props.vendorID << ':'
+		     << props.deviceID << ']' << endl;
+	}
+
+	bpUtil::connect(scene.loadMessageEvent, loadMessageEvent);
 	scene.load(options);
 	float sceneSize = glm::compMax(scene.maxVertex - scene.minVertex);
 	cameraFar = sceneSize * 3.f;
@@ -64,7 +72,6 @@ void Vmgpu::initRenderResources(uint32_t width, uint32_t height)
 	cameraNode.update();
 	camera.update();
 
-	cout << "Initializing renderer..." << endl;
 	switch (options.strategy)
 	{
 	case Strategy::Single:

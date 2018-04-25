@@ -1,4 +1,5 @@
 #include "Scene.h"
+#include <iostream>
 #include <fstream>
 #include <iterator>
 #include <algorithm>
@@ -24,6 +25,7 @@ void Scene::load(Options& options)
 		meshes.resize(filesNames.size());
 		for (auto i = 0; i < filesNames.size(); i++)
 		{
+			loadMessageEvent("Loading \"" + filesNames[i] + "\"...");
 			meshes[i].loadObj(filesNames[i]);
 			const auto& minV = meshes[i].getMinVertex();
 			const auto& maxV = meshes[i].getMaxVertex();
@@ -39,6 +41,7 @@ void Scene::load(Options& options)
 		models.resize(filesNames.size());
 		for (auto i = 0; i < filesNames.size(); i++)
 		{
+			loadMessageEvent("Loading \"" + filesNames[i] + "\"...");
 			models[i].loadObj(filesNames[i]);
 			const auto& minV = models[i].getMinVertex();
 			const auto& maxV = models[i].getMaxVertex();

@@ -8,6 +8,7 @@ using namespace std;
 
 void Vmgpu::initSortFirst(uint32_t width, uint32_t height)
 {
+	loadMessageEvent("Initializing renderers...");
 	vector<pair<Device*, SortFirstRenderer*>> configurations;
 	for (auto& device : devices)
 	{
@@ -19,6 +20,7 @@ void Vmgpu::initSortFirst(uint32_t width, uint32_t height)
 
 	if (devices.size() > 1)
 	{
+		loadMessageEvent("Initializing sort-first compositor...");
 		SortFirstCompositor* compositor = new SortFirstCompositor();
 		compositor->init(move(configurations), swapchain.getFormat(), width, height);
 		mainRenderer.reset(compositor);
@@ -32,6 +34,7 @@ void Vmgpu::initSortFirst(uint32_t width, uint32_t height)
 	{
 		auto renderer = static_pointer_cast<SFRenderer>(r);
 		auto& rm = renderer->getResourceManager();
+		bpUtil::connect(rm.loadMessageEvent, loadMessageEvent);
 		if (options.basic)
 		{
 			for (const auto& mesh : scene.meshes)
