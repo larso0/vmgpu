@@ -62,7 +62,8 @@ void Vmgpu::initRenderResources(uint32_t width, uint32_t height)
 	scene.load(options);
 	float sceneSize = glm::compMax(scene.maxVertex - scene.minVertex);
 	cameraFar = sceneSize * 3.f;
-	cameraNode.translate(0.f, 0.f, scene.maxVertex.z * 3.f);
+	float cameraTranslate = 2.f * (options.zUp ? -scene.minVertex.y : scene.maxVertex.z);
+	cameraNode.translate(0.f, 0.f, cameraTranslate);
 	camera.setPerspectiveProjection(glm::radians(60.f),
 					static_cast<float>(width) / static_cast<float>(height),
 					0.1f, cameraFar);
