@@ -13,8 +13,6 @@ public:
 	void setCamera(bpScene::Camera& camera) { SLRenderer::camera = &camera; }
 	void render(bp::Framebuffer& fbo, VkCommandBuffer cmdBuffer) override;
 	ResourceManager& getResourceManager() { return resourceManager; }
-	void increaseWorkload(float) override {}
-	void decreaseWorkload(float) override {}
 
 private:
 	bpScene::Camera* camera;
