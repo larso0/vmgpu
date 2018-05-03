@@ -26,7 +26,8 @@ Options parseOptions(int argc, char** argv)
 		("generate-normals,g",
 		 "generate face normals with geometry shader, instead of loading")
 		("z-up,z",
-		 "rotate the mesh(es) 90 degrees such that z axis meshes will be draw correctly");
+		 "rotate the mesh(es) 90 degrees such that z axis meshes will be draw correctly")
+		("max", po::value<uint32_t>()->default_value(0), "max obj count");
 	po::variables_map arguments;
 	po::store(po::parse_command_line(argc, argv, options), arguments);
 
@@ -53,6 +54,7 @@ Options parseOptions(int argc, char** argv)
 	result.simulateMultiGPU = arguments.count("simulate-mgpu") > 0;
 	result.list = arguments.count("list") > 0;
 	result.directory = false;
+	result.maxObjCount = arguments["max"].as<uint32_t>();
 	if (arguments.count("directory") > 0)
 	{
 		if (result.list)

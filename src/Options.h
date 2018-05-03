@@ -24,6 +24,7 @@ struct Options
 	std::string path;
 	uint32_t width, height;
 	uint32_t deviceCount;
+	uint32_t maxObjCount;
 };
 
 Options parseOptions(int argc, char** argv);

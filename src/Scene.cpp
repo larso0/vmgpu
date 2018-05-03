@@ -42,6 +42,11 @@ void Scene::load(Options& options)
 		filesNames.push_back(options.path);
 	}
 
+	if (options.maxObjCount > 0 && filesNames.size() > options.maxObjCount)
+	{
+		filesNames.resize(options.maxObjCount);
+	}
+
 	if (options.basic)
 	{
 		meshes.resize(filesNames.size());
