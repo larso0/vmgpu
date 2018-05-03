@@ -37,7 +37,8 @@ void Vmgpu::initSortLast(uint32_t width, uint32_t height)
 		bpUtil::connect(rm.loadMessageEvent, loadMessageEvent);
 	}
 
-	if (options.list && options.basic && scene.meshes.size() >= options.deviceCount)
+	if ((options.list || options.directory) && options.basic
+	    && scene.meshes.size() >= options.deviceCount)
 	{
 		for (unsigned i = 0; i < scene.meshes.size(); i++)
 		{
