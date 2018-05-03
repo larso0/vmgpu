@@ -5,6 +5,7 @@
 #include <QLoggingCategory>
 #include <bpScene/Mesh.h>
 #include <iostream>
+#include <iomanip>
 
 using namespace std;
 using bpScene::Mesh;
@@ -27,6 +28,10 @@ int main(int argc, char** argv)
 		qFatal("Failed to create instance.");
 
 	Vmgpu vmgpu{instance, options};
+	vmgpu.setVSync(false);
+	bpUtil::connect(vmgpu.framerateEvent, [](float fps){
+		cout << "\rFramerate = " << setprecision(4) << fps << " FPS" << flush;
+	});
 	bpUtil::connect(vmgpu.loadMessageEvent, [](const string& msg){
 		cout << msg << endl;
 	});
