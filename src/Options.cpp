@@ -37,13 +37,13 @@ Options parseOptions(int argc, char** argv)
 	}
 
 	result.basic = arguments.count("basic") > 0;
+	result.generateNormals = false;
 	if (arguments.count("generate-normals") > 0)
 	{
 		if (!result.basic)
 		{
 			cerr << "Warning: generate normals flag is ignored, "
 			     << "as the basic flag is not specified.\n";
-			result.generateNormals = false;
 		} else
 		{
 			result.generateNormals = true;
@@ -52,12 +52,12 @@ Options parseOptions(int argc, char** argv)
 	result.zUp = arguments.count("z-up") > 0;
 	result.simulateMultiGPU = arguments.count("simulate-mgpu") > 0;
 	result.list = arguments.count("list") > 0;
+	result.directory = false;
 	if (arguments.count("directory") > 0)
 	{
 		if (result.list)
 		{
 			cerr << "Warning: directory flag is ignored, as list flag is specified.\n";
-			result.directory = false;
 		}
 		else
 			result.directory = true;

@@ -4,15 +4,23 @@
 #include <iterator>
 #include <algorithm>
 #include <boost/filesystem.hpp>
+#include "ThreadPool.h"
 
 namespace fs = boost::filesystem;
 
 using namespace std;
-using bpScene::Mesh;
+using namespace bpScene;
+
+static void loadMesh(Mesh& mesh, const string& file, const Mesh::LoadFlags& flags)
+{
+	mesh.loadObj(file, flags);
+}
 
 void Scene::load(Options& options)
 {
 	vector<string> filesNames;
+
+	ThreadPool pool{thread::hardware_concurrency()};
 
 	if (options.list)
 	{
@@ -42,10 +50,19 @@ void Scene::load(Options& options)
 		{
 			loadFlags << Mesh::NORMAL;
 		}
+
+		vector<future<void>> futures;
+
 		for (auto i = 0; i < filesNames.size(); i++)
 		{
 			loadMessageEvent("Loading \"" + filesNames[i] + "\"...");
-			meshes[i].loadObj(filesNames[i], loadFlags);
+			futures.push_back(pool.enqueue(loadMesh, meshes[i], filesNames[i],
+						       loadFlags));
+		}
+
+		for (auto i = 0; i < filesNames.size(); i++)
+		{
+			futures[i].wait();
 			const auto& minV = meshes[i].getMinVertex();
 			const auto& maxV = meshes[i].getMaxVertex();
 			if (minV.x < minVertex.x) minVertex.x = minV.x;
