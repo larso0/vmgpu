@@ -11,14 +11,9 @@ namespace fs = boost::filesystem;
 using namespace std;
 using namespace bpScene;
 
-static void loadMesh(Mesh& mesh, const string& file, const Mesh::LoadFlags& flags)
-{
-	mesh.loadObj(file, flags);
-}
-
 void Scene::load(Options& options)
 {
-	vector<string> filesNames;
+	vector<string> fileNames;
 
 	ThreadPool pool{thread::hardware_concurrency()};
 
@@ -26,7 +21,7 @@ void Scene::load(Options& options)
 	{
 		ifstream file(options.path);
 		copy(istream_iterator<string>(file), istream_iterator<string>(),
-		     back_inserter(filesNames));
+		     back_inserter(fileNames));
 	} else if (options.directory)
 	{
 		fs::path path{options.path};
@@ -34,22 +29,22 @@ void Scene::load(Options& options)
 		{
 			if (fs::is_regular_file(i->path()) && i->path().extension() == ".obj")
 			{
-				filesNames.push_back(i->path().string());
+				fileNames.push_back(i->path().string());
 			}
 		}
 	} else
 	{
-		filesNames.push_back(options.path);
+		fileNames.push_back(options.path);
 	}
 
-	if (options.maxObjCount > 0 && filesNames.size() > options.maxObjCount)
+	if (options.maxObjCount > 0 && fileNames.size() > options.maxObjCount)
 	{
-		filesNames.resize(options.maxObjCount);
+		fileNames.resize(options.maxObjCount);
 	}
 
 	if (options.basic)
 	{
-		meshes.resize(filesNames.size());
+		meshes.resize(fileNames.size());
 		auto loadFlags = Mesh::LoadFlags{};
 		if (!options.generateNormals)
 		{
@@ -58,14 +53,15 @@ void Scene::load(Options& options)
 
 		vector<future<void>> futures;
 
-		for (auto i = 0; i < filesNames.size(); i++)
+		for (auto i = 0; i < fileNames.size(); i++)
 		{
-			loadMessageEvent("Loading \"" + filesNames[i] + "\"...");
-			futures.push_back(pool.enqueue(loadMesh, meshes[i], filesNames[i],
-						       loadFlags));
+			loadMessageEvent("Loading \"" + fileNames[i] + "\"...");
+			futures.push_back(pool.enqueue([this, i, &fileNames, &loadFlags]{
+				meshes[i].loadObj(fileNames[i], loadFlags);
+			}));
 		}
 
-		for (auto i = 0; i < filesNames.size(); i++)
+		for (auto i = 0; i < fileNames.size(); i++)
 		{
 			futures[i].wait();
 			const auto& minV = meshes[i].getMinVertex();
@@ -79,16 +75,16 @@ void Scene::load(Options& options)
 		}
 	} else
 	{
-		models.resize(filesNames.size());
+		models.resize(fileNames.size());
 		auto loadFlags = Mesh::LoadFlags{} << Mesh::TEXTURE_COORDINATE;
 		if (!options.generateNormals)
 		{
 			loadFlags << Mesh::NORMAL;
 		}
-		for (auto i = 0; i < filesNames.size(); i++)
+		for (auto i = 0; i < fileNames.size(); i++)
 		{
-			loadMessageEvent("Loading \"" + filesNames[i] + "\"...");
-			models[i].loadObj(filesNames[i], loadFlags);
+			loadMessageEvent("Loading \"" + fileNames[i] + "\"...");
+			models[i].loadObj(fileNames[i], loadFlags);
 			const auto& minV = models[i].getMinVertex();
 			const auto& maxV = models[i].getMaxVertex();
 			if (minV.x < minVertex.x) minVertex.x = minV.x;
