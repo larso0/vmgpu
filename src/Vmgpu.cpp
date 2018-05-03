@@ -23,6 +23,7 @@ void Vmgpu::initRenderResources(uint32_t width, uint32_t height)
 		DeviceRequirements requirements;
 		requirements.queues = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_TRANSFER_BIT;
 		requirements.features.samplerAnisotropy = VK_TRUE;
+		requirements.features.geometryShader = VK_TRUE;
 
 		auto physicalDevices = bpQt::queryDevices(*vulkanInstance(), requirements);
 		set<VkPhysicalDevice> selected;
@@ -103,6 +104,7 @@ void Vmgpu::resizeRenderResources(uint32_t width, uint32_t height)
 void Vmgpu::specifyDeviceRequirements(DeviceRequirements& requirements)
 {
 	requirements.features.samplerAnisotropy = VK_TRUE;
+	requirements.features.geometryShader = VK_TRUE;
 }
 
 void Vmgpu::render(VkCommandBuffer cmdBuffer)

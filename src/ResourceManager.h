@@ -19,9 +19,11 @@ class ResourceManager
 public:
 	ResourceManager() :
 		device{nullptr},
-		camera{nullptr} {}
+		camera{nullptr},
+		generateNormals{false} {}
 
-	void init(bp::Device& device, bp::RenderPass& renderPass, bpScene::Camera& camera);
+	void init(bp::Device& device, bp::RenderPass& renderPass, bpScene::Camera& camera,
+		  bool generateNormals = false);
 	unsigned addModel(const bpScene::Model& model);
 	unsigned addMesh(const bpScene::Mesh& mesh, uint32_t offset, uint32_t count);
 	unsigned addMesh(const bpScene::Mesh& mesh)
@@ -40,9 +42,11 @@ public:
 private:
 	bp::Device* device;
 	bpScene::Camera* camera;
+	bool generateNormals;
 
 	bpScene::DrawableSubpass subpass;
-	bp::Shader vertexBasic, vertexBasicUv, fragmentBasic, fragmentColored, fragmentTextured;
+	bp::Shader vertexBasic, vertexBasicUv, geomNormals, geomNormalsUv, fragmentBasic,
+		   fragmentColored, fragmentTextured;
 	bp::DescriptorSetLayout setLayoutColored, setLayoutTextured;
 	bp::PipelineLayout pipelineLayoutBasic, pipelineLayoutColored, pipelineLayoutTextured;
 	bp::GraphicsPipeline pipelineBasic, pipelineColored, pipelineTextured;

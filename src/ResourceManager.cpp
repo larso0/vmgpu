@@ -5,21 +5,38 @@
 using namespace bp;
 using namespace bpScene;
 
-void ResourceManager::init(Device& device, RenderPass& renderPass, Camera& camera)
+void ResourceManager::init(Device& device, RenderPass& renderPass, Camera& camera,
+			   bool generateNormals)
 {
 	ResourceManager::device = &device;
 	ResourceManager::camera = &camera;
+	ResourceManager::generateNormals = generateNormals;
 
 	//Load shader byte code
-	auto shaderCode = readBinaryFile("spv/basic.vert.spv");
+	auto shaderCode = readBinaryFile(generateNormals ? "spv/noNormal.vert.spv"
+							 : "spv/basic.vert.spv");
 	vertexBasic.init(device, VK_SHADER_STAGE_VERTEX_BIT,
 			 static_cast<uint32_t>(shaderCode.size()),
 			 reinterpret_cast<const uint32_t*>(shaderCode.data()));
 
-	shaderCode = readBinaryFile("spv/basicUv.vert.spv");
+	shaderCode = readBinaryFile(generateNormals ? "spv/noNormalUv.vert.spv"
+						    : "spv/basicUv.vert.spv");
 	vertexBasicUv.init(device, VK_SHADER_STAGE_VERTEX_BIT,
 			   static_cast<uint32_t>(shaderCode.size()),
 			   reinterpret_cast<const uint32_t*>(shaderCode.data()));
+
+	if (generateNormals)
+	{
+		shaderCode = readBinaryFile("spv/generateNormals.geom.spv");
+		geomNormals.init(device, VK_SHADER_STAGE_GEOMETRY_BIT,
+				 static_cast<uint32_t>(shaderCode.size()),
+				 reinterpret_cast<const uint32_t*>(shaderCode.data()));
+
+		shaderCode = readBinaryFile("spv/generateNormalsUv.geom.spv");
+		geomNormalsUv.init(device, VK_SHADER_STAGE_GEOMETRY_BIT,
+				   static_cast<uint32_t>(shaderCode.size()),
+				   reinterpret_cast<const uint32_t*>(shaderCode.data()));
+	}
 
 	shaderCode = readBinaryFile("spv/basic.frag.spv");
 	fragmentBasic.init(device, VK_SHADER_STAGE_FRAGMENT_BIT,
@@ -48,51 +65,79 @@ void ResourceManager::init(Device& device, RenderPass& renderPass, Camera& camer
 	setLayoutTextured.init(device);
 
 	//Setup pipeline layouts
-	pipelineLayoutBasic.addPushConstantRange({VK_SHADER_STAGE_VERTEX_BIT, 0,
+	pipelineLayoutBasic.addPushConstantRange({VK_SHADER_STAGE_VERTEX_BIT
+						  | VK_SHADER_STAGE_GEOMETRY_BIT, 0,
 						  sizeof(PushConstantResource::Matrices)});
 	pipelineLayoutBasic.init(device);
 
 	pipelineLayoutColored.addDescriptorSetLayout(setLayoutColored);
-	pipelineLayoutColored.addPushConstantRange({VK_SHADER_STAGE_VERTEX_BIT, 0,
+	pipelineLayoutColored.addPushConstantRange({VK_SHADER_STAGE_VERTEX_BIT
+						    | VK_SHADER_STAGE_GEOMETRY_BIT, 0,
 						    sizeof(PushConstantResource::Matrices)});
 	pipelineLayoutColored.init(device);
 
 	pipelineLayoutTextured.addDescriptorSetLayout(setLayoutTextured);
-	pipelineLayoutTextured.addPushConstantRange({VK_SHADER_STAGE_VERTEX_BIT, 0,
+	pipelineLayoutTextured.addPushConstantRange({VK_SHADER_STAGE_VERTEX_BIT
+						     | VK_SHADER_STAGE_GEOMETRY_BIT, 0,
 						     sizeof(PushConstantResource::Matrices)});
 	pipelineLayoutTextured.init(device);
 	
 	//Setup pipelines
 	pipelineBasic.addShaderStageInfo(vertexBasic.getPipelineShaderStageInfo());
 	pipelineBasic.addShaderStageInfo(fragmentBasic.getPipelineShaderStageInfo());
-	pipelineBasic.addVertexBindingDescription({0, Vertex::STRIDE,
+	pipelineBasic.addVertexBindingDescription({0, sizeof(glm::vec3),
 						   VK_VERTEX_INPUT_RATE_VERTEX});
-	pipelineBasic.addVertexAttributeDescription({0, 0, VK_FORMAT_R32G32B32_SFLOAT,
-						     Vertex::POSITION_OFFSET});
-	pipelineBasic.addVertexAttributeDescription({1, 0, VK_FORMAT_R32G32B32_SFLOAT,
-						     Vertex::NORMAL_OFFSET});
+	pipelineBasic.addVertexAttributeDescription({0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0});
+	if (generateNormals)
+	{
+		pipelineBasic.addShaderStageInfo(geomNormals.getPipelineShaderStageInfo());
+	} else
+	{
+		pipelineBasic.addVertexBindingDescription({1, sizeof(glm::vec3),
+							   VK_VERTEX_INPUT_RATE_VERTEX});
+		pipelineBasic.addVertexAttributeDescription({1, 1, VK_FORMAT_R32G32B32_SFLOAT, 0});
+	}
 	pipelineBasic.init(device, renderPass, pipelineLayoutBasic);
 
 	pipelineColored.addShaderStageInfo(vertexBasic.getPipelineShaderStageInfo());
 	pipelineColored.addShaderStageInfo(fragmentColored.getPipelineShaderStageInfo());
-	pipelineColored.addVertexBindingDescription({0, Vertex::STRIDE,
-						     VK_VERTEX_INPUT_RATE_VERTEX});
-	pipelineColored.addVertexAttributeDescription({0, 0, VK_FORMAT_R32G32B32_SFLOAT,
-						       Vertex::POSITION_OFFSET});
-	pipelineColored.addVertexAttributeDescription({1, 0, VK_FORMAT_R32G32B32_SFLOAT,
-						       Vertex::NORMAL_OFFSET});
+	pipelineColored.addVertexBindingDescription({0, sizeof(glm::vec3),
+						   VK_VERTEX_INPUT_RATE_VERTEX});
+	pipelineColored.addVertexAttributeDescription({0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0});
+	if (generateNormals)
+	{
+		pipelineColored.addShaderStageInfo(geomNormals.getPipelineShaderStageInfo());
+	} else
+	{
+		pipelineColored.addVertexBindingDescription({1, sizeof(glm::vec3),
+							     VK_VERTEX_INPUT_RATE_VERTEX});
+		pipelineColored.addVertexAttributeDescription({1, 1, VK_FORMAT_R32G32B32_SFLOAT,
+							       0});
+	}
 	pipelineColored.init(device, renderPass, pipelineLayoutColored);
 
 	pipelineTextured.addShaderStageInfo(vertexBasicUv.getPipelineShaderStageInfo());
 	pipelineTextured.addShaderStageInfo(fragmentTextured.getPipelineShaderStageInfo());
-	pipelineTextured.addVertexBindingDescription({0, Vertex::STRIDE,
+	pipelineTextured.addVertexBindingDescription({0, sizeof(glm::vec3),
 						      VK_VERTEX_INPUT_RATE_VERTEX});
-	pipelineTextured.addVertexAttributeDescription({0, 0, VK_FORMAT_R32G32B32_SFLOAT,
-							Vertex::POSITION_OFFSET});
-	pipelineTextured.addVertexAttributeDescription({1, 0, VK_FORMAT_R32G32B32_SFLOAT,
-							Vertex::NORMAL_OFFSET});
-	pipelineTextured.addVertexAttributeDescription({2, 0, VK_FORMAT_R32G32_SFLOAT,
-							Vertex::TEXTURE_COORDINATE_OFFSET});
+	pipelineTextured.addVertexAttributeDescription({0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0});
+
+	if (generateNormals)
+	{
+		pipelineTextured.addShaderStageInfo(geomNormalsUv.getPipelineShaderStageInfo());
+		pipelineTextured.addVertexBindingDescription({1, sizeof(glm::vec2),
+							      VK_VERTEX_INPUT_RATE_VERTEX});
+		pipelineTextured.addVertexAttributeDescription({1, 1, VK_FORMAT_R32G32_SFLOAT, 0});
+	} else
+	{
+		pipelineTextured.addVertexBindingDescription({1, sizeof(glm::vec3),
+							      VK_VERTEX_INPUT_RATE_VERTEX});
+		pipelineTextured.addVertexBindingDescription({2, sizeof(glm::vec2),
+							      VK_VERTEX_INPUT_RATE_VERTEX});
+		pipelineTextured.addVertexAttributeDescription({1, 1, VK_FORMAT_R32G32B32_SFLOAT,
+								0});
+		pipelineTextured.addVertexAttributeDescription({2, 2, VK_FORMAT_R32G32_SFLOAT, 0});
+	}
 	pipelineTextured.init(device, renderPass, pipelineLayoutTextured);
 }
 
@@ -125,7 +170,8 @@ void ResourceManager::addModelInstance(unsigned modelIndex, Node& node)
 	unsigned pushId = pushConstants.createResource();
 	pushConstants[pushId].init(modelIsTextured[modelIndex] ? pipelineLayoutTextured
 							       : pipelineLayoutColored,
-				   VK_SHADER_STAGE_VERTEX_BIT, node, *camera);
+				   VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT, node,
+				   *camera);
 	bpUtil::connect(modelDrawables[drawableId].resourceBindingEvent, pushConstants[pushId],
 			&PushConstantResource::bind);
 	subpass.addDrawable(modelDrawables[drawableId]);
@@ -138,7 +184,9 @@ void ResourceManager::addMeshInstance(unsigned meshId, bpScene::Node& node)
 	meshDrawables[drawableId].init(pipelineBasic, mesh, mesh.getOffset(),
 				       mesh.getElementCount());
 	unsigned pushId = pushConstants.createResource();
-	pushConstants[pushId].init(pipelineLayoutBasic, VK_SHADER_STAGE_VERTEX_BIT, node, *camera);
+	pushConstants[pushId].init(pipelineLayoutBasic,
+				   VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT, node,
+				   *camera);
 	bpUtil::connect(meshDrawables[drawableId].resourceBindingEvent, pushConstants[pushId],
 			&PushConstantResource::bind);
 	subpass.addDrawable(meshDrawables[drawableId]);

@@ -22,7 +22,7 @@ file(GLOB_RECURSE SHADERS
      "shaders/*.frag"
      "shaders/*.comp")
 
-find_package(Boost REQUIRED COMPONENTS "program_options")
+find_package(Boost REQUIRED COMPONENTS "program_options" "filesystem")
 
 add_executable(vmgpu ${SRC})
 target_include_directories(vmgpu PRIVATE ${Boost_INCLUDE_DIRS})

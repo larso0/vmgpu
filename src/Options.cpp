@@ -17,12 +17,15 @@ Options parseOptions(int argc, char** argv)
 		("strategy,s", po::value<string>()->default_value("single"),
 		 "strategy for rendering: single, sort-first, or sort-last")
 		("list,l", "specifies that the passed file is a list of obj files to load")
-		("file,f", po::value<string>(), "file to load")
+		("directory,d", "specifies to load all obj files in the path, recursively")
+		("path,p", po::value<string>(), "path to load")
 		("count,c", po::value<uint32_t>()->default_value(2),
 		 "device count (how many devices/gpus to use)")
 		("simulate-mgpu", "similate the use of more GPUs than available")
 		("basic,b", "use basic rendering of mesh (will not load materials)")
-		("z-up",
+		("generate-normals,g",
+		 "generate face normals with geometry shader, instead of loading")
+		("z-up,z",
 		 "rotate the mesh(es) 90 degrees such that z axis meshes will be draw correctly");
 	po::variables_map arguments;
 	po::store(po::parse_command_line(argc, argv, options), arguments);
@@ -34,9 +37,31 @@ Options parseOptions(int argc, char** argv)
 	}
 
 	result.basic = arguments.count("basic") > 0;
+	if (arguments.count("generate-normals") > 0)
+	{
+		if (!result.basic)
+		{
+			cerr << "Warning: generate normals flag is ignored, "
+			     << "as the basic flag is not specified.\n";
+			result.generateNormals = false;
+		} else
+		{
+			result.generateNormals = true;
+		}
+	}
 	result.zUp = arguments.count("z-up") > 0;
 	result.simulateMultiGPU = arguments.count("simulate-mgpu") > 0;
-	result.objList = arguments.count("list") > 0;
+	result.list = arguments.count("list") > 0;
+	if (arguments.count("directory") > 0)
+	{
+		if (result.list)
+		{
+			cerr << "Warning: directory flag is ignored, as list flag is specified.\n";
+			result.directory = false;
+		}
+		else
+			result.directory = true;
+	}
 
 	{
 		string res = arguments["resolution"].as<string>();
@@ -75,12 +100,12 @@ Options parseOptions(int argc, char** argv)
 
 	if (result.strategy == Strategy::Single) result.deviceCount = 1;
 
-	if (arguments.count("file"))
+	if (arguments.count("path"))
 	{
-		result.objPath = arguments["file"].as<string>();
+		result.path = arguments["path"].as<string>();
 	} else
 	{
-		cerr << "No file was specified.\n";
+		cerr << "No path was specified.\n";
 		cout << options << endl;
 		throw 2;
 	}

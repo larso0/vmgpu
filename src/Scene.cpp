@@ -3,30 +3,49 @@
 #include <fstream>
 #include <iterator>
 #include <algorithm>
+#include <boost/filesystem.hpp>
+
+namespace fs = boost::filesystem;
 
 using namespace std;
+using bpScene::Mesh;
 
 void Scene::load(Options& options)
 {
 	vector<string> filesNames;
 
-	if (options.objList)
+	if (options.list)
 	{
-		ifstream file(options.objPath);
+		ifstream file(options.path);
 		copy(istream_iterator<string>(file), istream_iterator<string>(),
 		     back_inserter(filesNames));
+	} else if (options.directory)
+	{
+		fs::path path{options.path};
+		for (fs::directory_iterator i{path}; i != fs::directory_iterator{}; ++i)
+		{
+			if (fs::is_regular_file(i->path()) && i->path().extension() == ".obj")
+			{
+				filesNames.push_back(i->path().string());
+			}
+		}
 	} else
 	{
-		filesNames.push_back(options.objPath);
+		filesNames.push_back(options.path);
 	}
 
 	if (options.basic)
 	{
 		meshes.resize(filesNames.size());
+		auto loadFlags = Mesh::LoadFlags{};
+		if (!options.generateNormals)
+		{
+			loadFlags << Mesh::NORMAL;
+		}
 		for (auto i = 0; i < filesNames.size(); i++)
 		{
 			loadMessageEvent("Loading \"" + filesNames[i] + "\"...");
-			meshes[i].loadObj(filesNames[i]);
+			meshes[i].loadObj(filesNames[i], loadFlags);
 			const auto& minV = meshes[i].getMinVertex();
 			const auto& maxV = meshes[i].getMaxVertex();
 			if (minV.x < minVertex.x) minVertex.x = minV.x;
@@ -39,10 +58,15 @@ void Scene::load(Options& options)
 	} else
 	{
 		models.resize(filesNames.size());
+		auto loadFlags = Mesh::LoadFlags{} << Mesh::TEXTURE_COORDINATE;
+		if (!options.generateNormals)
+		{
+			loadFlags << Mesh::NORMAL;
+		}
 		for (auto i = 0; i < filesNames.size(); i++)
 		{
 			loadMessageEvent("Loading \"" + filesNames[i] + "\"...");
-			models[i].loadObj(filesNames[i]);
+			models[i].loadObj(filesNames[i], loadFlags);
 			const auto& minV = models[i].getMinVertex();
 			const auto& maxV = models[i].getMaxVertex();
 			if (minV.x < minVertex.x) minVertex.x = minV.x;

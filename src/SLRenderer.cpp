@@ -16,5 +16,5 @@ void SLRenderer::setupSubpasses()
 
 void SLRenderer::initResources(uint32_t, uint32_t)
 {
-	resourceManager.init(getDevice(), getRenderPass(), *camera);
+	resourceManager.init(getDevice(), getRenderPass(), *camera, generateNormals);
 }

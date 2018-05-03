@@ -18,8 +18,10 @@ struct Options
 	bool simulateMultiGPU;
 	bool basic;
 	bool zUp;
-	bool objList;
-	std::string objPath;
+	bool list;
+	bool directory;
+	bool generateNormals;
+	std::string path;
 	uint32_t width, height;
 	uint32_t deviceCount;
 };

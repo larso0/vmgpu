@@ -8,14 +8,16 @@
 class SLRenderer : public bpMulti::SortLastRenderer
 {
 public:
-	SLRenderer() : camera{nullptr} {}
+	SLRenderer() : camera{nullptr}, generateNormals{false} {}
 
 	void setCamera(bpScene::Camera& camera) { SLRenderer::camera = &camera; }
+	void setGenerateNormals(bool generate) { generateNormals = generate; }
 	void render(bp::Framebuffer& fbo, VkCommandBuffer cmdBuffer) override;
 	ResourceManager& getResourceManager() { return resourceManager; }
 
 private:
 	bpScene::Camera* camera;
+	bool generateNormals;
 	ResourceManager resourceManager;
 
 	void setupSubpasses() override;

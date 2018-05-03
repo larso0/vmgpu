@@ -8,13 +8,15 @@
 class SFRenderer : public bpMulti::SortFirstRenderer
 {
 public:
-	SFRenderer() : camera{nullptr} {}
+	SFRenderer() : camera{nullptr}, generateNormals{false} {}
 
 	void setCamera(bpScene::Camera& camera) { SFRenderer::camera = &camera; }
+	void setGenerateNormals(bool generate) { generateNormals = generate; }
 	void render(bp::Framebuffer& fbo, VkCommandBuffer cmdBuffer) override;
 	ResourceManager& getResourceManager() { return resourceManager; }
 private:
 	bpScene::Camera* camera;
+	bool generateNormals;
 	ResourceManager resourceManager;
 
 	void setupSubpasses() override;

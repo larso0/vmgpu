@@ -14,6 +14,7 @@ void Vmgpu::initSortLast(uint32_t width, uint32_t height)
 	{
 		SLRenderer* renderer = new SLRenderer();
 		renderer->setCamera(camera);
+		renderer->setGenerateNormals(options.generateNormals);
 		renderers.emplace_back(renderer);
 		configurations.emplace_back(device.get(), renderer);
 	}
@@ -36,7 +37,7 @@ void Vmgpu::initSortLast(uint32_t width, uint32_t height)
 		bpUtil::connect(rm.loadMessageEvent, loadMessageEvent);
 	}
 
-	if (options.objList && options.basic && scene.meshes.size() >= options.deviceCount)
+	if (options.list && options.basic && scene.meshes.size() >= options.deviceCount)
 	{
 		for (unsigned i = 0; i < scene.meshes.size(); i++)
 		{

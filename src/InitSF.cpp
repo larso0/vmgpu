@@ -14,6 +14,7 @@ void Vmgpu::initSortFirst(uint32_t width, uint32_t height)
 	{
 		SFRenderer* renderer = new SFRenderer();
 		renderer->setCamera(camera);
+		renderer->setGenerateNormals(options.generateNormals);
 		renderers.emplace_back(renderer);
 		configurations.emplace_back(device.get(), renderer);
 	}
