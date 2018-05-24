@@ -25,7 +25,8 @@ void Scene::load(Options& options)
 	} else if (options.directory)
 	{
 		fs::path path{options.path};
-		for (fs::directory_iterator i{path}; i != fs::directory_iterator{}; ++i)
+		fs::recursive_directory_iterator end;
+		for (fs::recursive_directory_iterator i{path}; i != end; ++i)
 		{
 			if (fs::is_regular_file(i->path()) && i->path().extension() == ".obj")
 			{
