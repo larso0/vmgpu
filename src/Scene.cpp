@@ -117,7 +117,7 @@ void Scene::load(Options& options)
 			unsigned triangleCount = 0;
 			for (unsigned j = 0; j < models[i].getMeshCount(); j++)
 			{
-				triangleCount += models[i].getMesh(j).getElementCount();
+				triangleCount += models[i].getMesh(j).getElementCount() / 3;
 			}
 			sumTriangleCount += triangleCount;
 			loadMessageEvent("Loaded mesh \"" + fileNames[i]
