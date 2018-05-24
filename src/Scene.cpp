@@ -53,9 +53,9 @@ void Scene::load(Options& options)
 
 		vector<future<void>> futures;
 
+		loadMessageEvent("Loading meshes...");
 		for (auto i = 0; i < fileNames.size(); i++)
 		{
-			loadMessageEvent("Loading \"" + fileNames[i] + "\"...");
 			futures.push_back(pool.enqueue([this, i, &fileNames, &loadFlags]{
 				meshes[i].loadObj(fileNames[i], loadFlags);
 			}));
@@ -92,9 +92,9 @@ void Scene::load(Options& options)
 
 		vector<future<void>> futures;
 
+		loadMessageEvent("Loading meshes...");
 		for (auto i = 0; i < fileNames.size(); i++)
 		{
-			loadMessageEvent("Loading \"" + fileNames[i] + "\"...");
 			futures.push_back(pool.enqueue([this, i, &fileNames, &loadFlags]{
 				models[i].loadObj(fileNames[i], loadFlags);
 			}));
