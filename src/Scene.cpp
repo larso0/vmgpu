@@ -61,6 +61,7 @@ void Scene::load(Options& options)
 			}));
 		}
 
+		unsigned sumTriangleCount = 0;
 		for (auto i = 0; i < fileNames.size(); i++)
 		{
 			futures[i].wait();
@@ -72,7 +73,14 @@ void Scene::load(Options& options)
 			if (maxV.y > maxVertex.y) maxVertex.y = maxV.y;
 			if (minV.z < minVertex.z) minVertex.z = minV.z;
 			if (maxV.z > maxVertex.z) maxVertex.z = maxV.z;
+
+			unsigned triangleCount = meshes[i].getElementCount() / 3;
+			sumTriangleCount += triangleCount;
+			loadMessageEvent("Loaded mesh \"" + fileNames[i]
+					 + "\" with triangle count of "
+					 + to_string(triangleCount) + ".");
 		}
+		loadMessageEvent("Total triangle count is " + to_string(sumTriangleCount) + ".");
 	} else
 	{
 		models.resize(fileNames.size());
@@ -81,10 +89,21 @@ void Scene::load(Options& options)
 		{
 			loadFlags << Mesh::NORMAL;
 		}
+
+		vector<future<void>> futures;
+
 		for (auto i = 0; i < fileNames.size(); i++)
 		{
 			loadMessageEvent("Loading \"" + fileNames[i] + "\"...");
-			models[i].loadObj(fileNames[i], loadFlags);
+			futures.push_back(pool.enqueue([this, i, &fileNames, &loadFlags]{
+				models[i].loadObj(fileNames[i], loadFlags);
+			}));
+		}
+
+		unsigned sumTriangleCount = 0;
+		for (auto i = 0; i < fileNames.size(); i++)
+		{
+			futures[i].wait();
 			const auto& minV = models[i].getMinVertex();
 			const auto& maxV = models[i].getMaxVertex();
 			if (minV.x < minVertex.x) minVertex.x = minV.x;
@@ -93,7 +112,18 @@ void Scene::load(Options& options)
 			if (maxV.y > maxVertex.y) maxVertex.y = maxV.y;
 			if (minV.z < minVertex.z) minVertex.z = minV.z;
 			if (maxV.z > maxVertex.z) maxVertex.z = maxV.z;
+
+			unsigned triangleCount = 0;
+			for (unsigned j = 0; j < models[i].getMeshCount(); j++)
+			{
+				triangleCount += models[i].getMesh(j).getElementCount();
+			}
+			sumTriangleCount += triangleCount;
+			loadMessageEvent("Loaded mesh \"" + fileNames[i]
+					 + "\" with triangle count of "
+					 + to_string(triangleCount) + ".");
 		}
+		loadMessageEvent("Total triangle count is " + to_string(sumTriangleCount) + ".");
 	}
 
 	if (options.zUp)
